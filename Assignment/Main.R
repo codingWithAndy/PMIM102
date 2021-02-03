@@ -10,9 +10,10 @@ Table1 <- qof_indicator_columns(data)
 print(Table1)
 
 
-#Q1 P1
 # Display unique Practice IDs
 
+
+#Q1 P1
 
 # Display top five drugs the practice prescribe the most.
 
