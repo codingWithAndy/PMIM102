@@ -65,13 +65,10 @@ qof_achievement_columns <- function(DBS){
 }
 
 gp_practices <- function(DBS) {
-  dbGetQuery(DBS, '
-    select practiceid as practice_id, ordinal_position as position,
-           data_type as type, character_maximum_length as length,
-           numeric_precision as precision
-    from information_schema.columns
-    where table_schema = \'public\' and
-          table_name = \'gp_data_up_to_2015\';')
+    dbGetQuery(DBS, '
+             select Distinct(practiceid), area, county 
+               from address 
+               order by county ASC')
 }
 
 ############### Main questions start!
