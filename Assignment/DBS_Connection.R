@@ -1,3 +1,8 @@
+library(RPostgreSQL)    
+library(GetoptLong)      
+library(tidyverse)      
+library(dbplyr)
+library(ggplot2)
 #Connecting to the PostGres gp_practice_data database.
 connect_to_dbs <- function(){
   #Make sure the RPostgreSQL package is available.
@@ -10,10 +15,15 @@ connect_to_dbs <- function(){
             user = "postgres", password = rstudioapi::askForPassword())
 }
 
+disconnect_dbs <- function(dbs) {
+  dbDisconnect(dbs)
+  dbUnloadDriver(drv)
+  print("Database and driver has been disconnected.")
+}
 
 #Not sure what this is doing with the qof_indicator table.
-qof_indicator_columns <- function(DBS) {
-  dbGetQuery(DBS, '
+qof_indicator_columns <- function(dbs) {
+  dbGetQuery(dbs, '
     select column_name as name, ordinal_position as position,
            data_type as type, character_maximum_length as length,
            numeric_precision as precision
@@ -24,16 +34,16 @@ qof_indicator_columns <- function(DBS) {
 
 
 #Calls all columns from the qof_achievement table.
-qof_indicator_columns_info <- function(DBS){
-  dbGetQuery(DBS, '
+qof_indicator_columns_info <- function(dbs){
+  dbGetQuery(dbs, '
     select *
     from information_schema.columns
     where table_schema = \'public\' and
           table_name = \'qof_indicator\';')
 }
 
-gp_data_up_to_2015_columns <- function(DBS){ 
-  dbGetQuery(DBS, '
+gp_data_up_to_2015_columns <- function(dbs){ 
+  dbGetQuery(dbs, '
     select column_name as name, ordinal_position as position,
            data_type as type, character_maximum_length as length,
            numeric_precision as precision
@@ -45,8 +55,8 @@ gp_data_up_to_2015_columns <- function(DBS){
 
 
 #Calls all columns from the qof_achievement table.
-qof_achievement_columns <- function(DBS){
-  dbGetQuery(DBS, '
+qof_achievement_columns <- function(dbs){
+  dbGetQuery(dbs, '
     select column_name as name, ordinal_position as position,
            data_type as type, character_maximum_length as length,
            numeric_precision as precision
@@ -56,8 +66,8 @@ qof_achievement_columns <- function(DBS){
 }
 
 #Calls all columns from the qof_achievement table.
-qof_achievement_columns <- function(DBS){
-  dbGetQuery(DBS, '
+qof_achievement_columns <- function(dbs){
+  dbGetQuery(dbs, '
     select *
     from information_schema.columns
     where table_schema = \'public\' and
@@ -74,17 +84,25 @@ gp_practices <- function(DBS) {
 ############### Main questions start!
 
 ## Question 1a
-top_5_drugs <- function(DBS, selected_practiceid) {
+select_gp <- function(DBS, selected_practiceid) {
   ## Find the top drugs prescribed by the selected GP
-  gp_drugs <- dbGetQuery(con, qq('
+  dbGetQuery(DBS, qq('
     select * from gp_data_up_to_2015
-    where practiceid = \'@{selected_practiceid}\''))
+    where practiceid = \'@{user_practice_id}\''))
   
-  drugs_count <- gp_drugs %>% distinct() %>%
-    filter(str_detect(bnfname, 'Tab')==TRUE) %>%
-    mutate(cost=quantity/items*actcost) %>%
-    group_by(bnfcode, bnfname) %>% 
-    summarise(cost=mean(cost)) %>%
-    ungroup() %>%
-    arrange(desc(cost)) %>% head(5)
 }
+
+find_cancer_patients <- function(dbs, gp) {
+  dbGetQuery(dbs, qq('select * from qof_achievement
+  where indicator like \'CAN%\' and orgcode = \'@{user_practice_id}\''));
+}
+
+
+
+#drugs_count <- gp_drugs %>% distinct() %>%
+#  filter(str_detect(bnfname, 'Tab')==TRUE) %>%
+#  mutate(cost=quantity/items*actcost) %>%
+#  group_by(bnfcode, bnfname) %>% 
+#  summarise(cost=mean(cost)) %>%
+#  ungroup() %>%
+#  arrange(desc(cost)) %>% head(5)

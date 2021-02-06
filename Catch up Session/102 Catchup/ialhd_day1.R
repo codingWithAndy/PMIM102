@@ -56,12 +56,7 @@ for(i in 2:nrow(vashmds_table)){
 head(vashmds_table, 17)
 vashmds_table %>% select(n) %>% sum()
 
-# This is more straightforward using base-R.
-table(vashmds$yearsep)
-sum(table(vashmds$yearsep))
-
-# Step 4: Create a morbseq variable
-# Group the data by the 'rootlpno' then arrange the data in those groups by the
+#g# Group the data by the 'rootlpno' then arrange the data in those groups by the
 # admission date and number the rows (still in the groups). When done, remember
 # to remove the grouping.
 vashmds <- vashmds %>%
