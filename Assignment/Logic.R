@@ -3,6 +3,7 @@ source("DBS_Connection.R");
 library(magrittr)
 library(dplyr)
 library(lubridate)
+library(gt)
 
 
 ## Collect GP Practices
@@ -33,10 +34,23 @@ disply_gp_top5_drugs<- function(dbs, gp) {
   
   top_5 <- select_gp(dbs, gp)
   
-  top_5_table <- top_5 %>% group_by(bnfcode, bnfname) %>% count() %>% arrange(desc(n)) %>% head(5)
+  
+  top_5_table <- top_5 %>% distinct() %>% filter(str_detect(bnfname, 'Tab')==TRUE) %>%
+    mutate(total=sum(quantity)) %>% 
+    group_by(bnfcode, bnfname) %>%
+    summarise(pescribed=sum(items)) %>%
+    arrange(desc(pescribed)) %>% head(5)
+  #top_5_table <- top_5 %>% group_by(bnfcode, bnfname) %>% 
+  #  count(bnfname) %>% ungroup() %>% arrange(desc(n)) %>% head(5)
   #top_5_data <- top_5_table %>% arrange(desc(n))
   
-  print("Top 5 medication pescribed are:")
+  top_5_table %>% gt() %>%
+    tab_header(title = md("Top 5 drugs in terms of spendings for GP Practice")) %>%
+    cols_label(
+      bnfname = "Name",
+      pescribed = "Total amount pescribed"
+    )
+  cat("Top 5 medication pescribed", gp," are:\n", sep="")
   print(top_5_table)
   
 }
