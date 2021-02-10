@@ -45,7 +45,7 @@ disply_gp_top5_drugs<- function(dbs, gp) {
   #top_5_data <- top_5_table %>% arrange(desc(n))
   
   top_5_table %>% gt() %>%
-    tab_header(title = md("Top 5 drugs in terms of spendings for GP Practice")) %>%
+    tab_header(title = md("Top 5 drugs perscribed for GP Practice")) %>%
     cols_label(
       bnfname = "Name",
       pescribed = "Total amount pescribed"
@@ -56,14 +56,21 @@ disply_gp_top5_drugs<- function(dbs, gp) {
 }
 
 diagnoised_with_cancer <- function(dbs, gp) {
-  all_patients <- select_gp(dbs, gp)
-  count_of_patients <- nrow(all_patients)
-  cat("Total number of patients:", count_of_patients)
-  cancer_patients <- find_cancer_patients(dbs,gp)
-  count_of_cancer_patients <- nrow(cancer_patients)
-  cat("\nTotal number of patients with cancer:", count_of_cancer_patients,"\n")
-  percent_of_cancer <- (count_of_cancer_patients/count_of_cancer_patients)
-  print(percent_of_cancer)
+  cancer_patients <- find_cancer_patients(dbs, gp)
+  all_pateients <- find_all_patients(dbs, gp)
+  
+  cancer_patients %>% gt() %>%
+    tab_header(title = md("Patients with Cancer at selected GP Practice"))
+  
+  count_cancer_patients <- as.numeric(nrow(cancer_patients))
+  count_all_patients <- as.numeric(nrow(all_pateients))
+  
+  cat("The practice has a total of ", count_cancer_patients,  " patients diagnosed with cancer\n", sep = "")
+  cat("The practice has a total of ", count_all_patients,  " patients diagnosed\n", sep = "")
+  
+  percentage = (nrow(cancer_patients)/nrow(all_pateients))*100
+  cat("The total percentage of patients diagnosed with cancer is: ", percentage,  "%\n", sep = "")
+  
 }
 
 library(data.table)

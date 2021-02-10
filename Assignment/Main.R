@@ -31,7 +31,7 @@ user_practice_id <- select_gp_prac()
 disply_gp_top5_drugs(data,user_practice_id)
 
 # Display the percentage of this practice’s patients that have been diagnosed with cancer
-find_cancer_patients(data,user_practice_id)
+#find_cancer_patients(data,user_practice_id) ### delete by the end of project!!!
 diagnoised_with_cancer(data,user_practice_id)
 # Create a plot that shows how this practice’s rate of cancer compares to the cancer rate for region the practice is in, 
 # as well as the rate for all of Wales Note: Do this via health board (hb in gp_data_up_to_2015)
