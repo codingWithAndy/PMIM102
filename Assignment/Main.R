@@ -24,6 +24,7 @@ display_gp_prac(data)
 #User needs to enter practice_id.
 #If id is incorrect user will be prompted for another.
 user_practice_id <- select_gp_prac()
+gp_region(data,user_practice_id)
 
 #Q1 P1
 
@@ -37,7 +38,7 @@ diagnoised_with_cancer(data,user_practice_id)
 
 # Create a plot that shows how this practice’s rate of cancer compares to the cancer rate for region the practice is in, 
 # as well as the rate for all of Wales Note: Do this via health board (hb in gp_data_up_to_2015)
-
+region_cancer_compare(data,user_practice_id,gp_region)
 
 # Q1 Part 2
 

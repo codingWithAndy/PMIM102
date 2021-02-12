@@ -106,6 +106,12 @@ find_all_patients <- function(dbs, gp) {
   where qf.orgcode = \'@{user_practice_id}\''));
 }
 
+region_cancer_compare <- function(dbs, gp) {
+  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
+  join address ad
+  on qf.orgcode = ad.practiceid
+  where qf.orgcode = \'@{user_practice_id}\''));
+}
 
 
 #drugs_count <- gp_drugs %>% distinct() %>%

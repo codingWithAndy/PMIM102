@@ -18,7 +18,7 @@ select_gp_prac <- function() {
     user_practice_id <- toupper(readline('Enter a practice ID (Wxxxxx):'))
     if (grepl('^W[0-9]{5}$', user_practice_id)){
       valid_id <- TRUE
-      cat('The pracrtice id ', user_practice_id, 'was found.')
+      cat('The pracrtice id ', user_practice_id, 'is valid.')
     } else {
       cat('The entered practice ID (', user_practice_id,
           ') is not valid, please try again.\n', sep='')
@@ -50,28 +50,60 @@ disply_gp_top5_drugs<- function(dbs, gp) {
       bnfname = "Name",
       pescribed = "Total amount pescribed"
     )
-  cat("Top 5 medication pescribed", gp," are:\n", sep="")
+  cat("Top 5 medication pescribed ", gp," are:\n", sep="")
   print(top_5_table)
   
 }
 
 diagnoised_with_cancer <- function(dbs, gp) {
-  cancer_patients <- find_cancer_patients(dbs, gp)
-  all_pateients <- find_all_patients(dbs, gp)
-  
-  cancer_patients %>% gt() %>%
-    tab_header(title = md("Patients with Cancer at selected GP Practice"))
-  
-  count_cancer_patients <- as.numeric(nrow(cancer_patients))
-  count_all_patients <- as.numeric(nrow(all_pateients))
-  
-  cat("The practice has a total of ", count_cancer_patients,  " patients diagnosed with cancer\n", sep = "")
-  cat("The practice has a total of ", count_all_patients,  " patients diagnosed\n", sep = "")
-  
-  percentage = (nrow(cancer_patients)/nrow(all_pateients))*100
-  cat("The total percentage of patients diagnosed with cancer is: ", percentage,  "%\n", sep = "")
-  
+  tryCatch({
+    cancer_patients <- find_cancer_patients(dbs, gp)
+    all_pateients <- find_all_patients(dbs, gp)
+    
+    cancer_patients %>% gt() %>%
+      tab_header(title = md("Patients with Cancer at selected GP Practice"))
+    
+    count_cancer_patients <- as.numeric(nrow(cancer_patients))
+    count_all_patients <- as.numeric(nrow(all_pateients))
+    
+    cat("The practice has a total of ", count_cancer_patients,  " patients diagnosed with cancer\n", sep = "")
+    cat("The practice has a total of ", count_all_patients,  " patients diagnosed\n", sep = "")
+    
+    percentage = (nrow(cancer_patients)/nrow(all_pateients))*100
+    cat("The total percentage of patients diagnosed with cancer is: ", percentage,  "%\n", sep = "")
+  },
+  error=function(e) {
+    print("This practice does not have any cancer patients.")
+  })
 }
+
+gp_region <- function( dbs, gp){
+  selected_gp <- dbGetQuery(dbs, qq('select * from address
+                      where practiceid = \'@{user_practice_id}\''))
+  
+  Region <- selected_gp %>% select(county) #county was chosen for regional analysis
+  
+  Region %>% gt() %>%
+    tab_header(title = md("GP Practice county location")) %>%
+    cols_label(
+      county = "Name",
+    )
+  Region_county <- paste(Region$county)
+  cat('\nThe practice ',user_practice_id, ' was located in following region.\n', Region_county, sep='')
+  print(Region_county)
+  return (Region_county)
+} 
+
+region_cancer_compare <- function(dbs, gp, gp_area) {
+  cancer <- 
+  all_cancer <- cancer %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  all_patients <- cancer %>% select(field4) %>% summarise(sum(field4,na.rm = TRUE))
+  cancer_rate_wales <-  (all_cancer/all_patients) *100 
+  cat('\nThe cancer rate for all practices are:\n', sep='')
+  print(cancer_rate_wales)
+}
+
+
 
 library(data.table)
 #install.packages('data.table')
