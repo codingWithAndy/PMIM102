@@ -24,7 +24,7 @@ display_gp_prac(data)
 #User needs to enter practice_id.
 #If id is incorrect user will be prompted for another.
 user_practice_id <- select_gp_prac()
-gp_region(data,user_practice_id)
+gp_location <- gp_region(data,user_practice_id)
 
 #Q1 P1
 

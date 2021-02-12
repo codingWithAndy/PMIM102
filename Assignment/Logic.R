@@ -90,7 +90,7 @@ gp_region <- function( dbs, gp){
     )
   Region_county <- paste(Region$county)
   cat('\nThe practice ',user_practice_id, ' was located in following region.\n', Region_county, sep='')
-  print(Region_county)
+  #print(Region_county)
   return (Region_county)
 } 
 
