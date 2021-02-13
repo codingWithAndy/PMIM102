@@ -60,24 +60,40 @@ diagnoised_with_cancer <- function(dbs, gp) {
     cancer_patients <- find_cancer_patients(dbs, gp)
     all_pateients <- find_all_patients(dbs, gp)
     
-    cancer_patients %>% gt() %>%
-      tab_header(title = md("Patients with Cancer at selected GP Practice"))
+    cancer_count <- cancer_patients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+    print(cancer_count)
     
-    count_cancer_patients <- as.numeric(nrow(cancer_patients))
-    count_all_patients <- as.numeric(nrow(all_pateients))
+    all_pateient_count <- all_pateients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+    print(all_pateient_count)
     
-    cat("The practice has a total of ", count_cancer_patients,  " patients diagnosed with cancer\n", sep = "")
-    cat("The practice has a total of ", count_all_patients,  " patients diagnosed\n", sep = "")
+    cancer_percent <- round(((cancer_count/all_pateient_count)*100), digits = 2)
     
-    percentage = (nrow(cancer_patients)/nrow(all_pateients))*100
-    cat("The total percentage of patients diagnosed with cancer is: ", percentage,  "%\n", sep = "")
+    print(cancer_percent)
+    print('Total number of cancer patients ', cancer_count, '\n')
+    
+    print('Total number of practice diagnosis ', all_pateient_count, '\n')
+    print('Percentage of cancer patients ', cancer_percent, '%\n')
+    
+    #cancer_patients %>% gt() %>%
+    #  tab_header(title = md("Patients with Cancer at selected GP Practice"))
+    
+    #cancer_count <- 
+    #non_cancer_count <- 
+    #count_cancer_patients <- as.numeric(nrow(cancer_patients))
+    #count_all_patients <- as.numeric(nrow(all_pateients))
+    
+    #cat("The practice has a total of ", count_cancer_patients,  " patients diagnosed with cancer\n", sep = "")
+    #cat("The practice has a total of ", count_all_patients,  " patients diagnosed\n", sep = "")
+    
+    #percentage = (nrow(cancer_patients)/nrow(all_pateients))*100
+    #cat("The total percentage of patients diagnosed with cancer is: ", percentage,  "%\n", sep = "")
   },
   error=function(e) {
-    print("This practice does not have any cancer patients.")
+    print("This practice does not have any cancer patient records.")
   })
 }
 
-gp_region <- function( dbs, gp){
+gp_region <- function(dbs, gp){
   selected_gp <- dbGetQuery(dbs, qq('select * from address
                       where practiceid = \'@{user_practice_id}\''))
   

@@ -92,12 +92,14 @@ select_gp <- function(DBS, selected_practiceid) {
   
 }
 
+
 find_cancer_patients <- function(dbs, gp) {
   dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
   join address ad
   on qf.orgcode = ad.practiceid
   where qf.indicator like \'CAN%\' and qf.orgcode = \'@{user_practice_id}\''));
 }
+
 
 find_all_patients <- function(dbs, gp) {
   dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
@@ -106,12 +108,40 @@ find_all_patients <- function(dbs, gp) {
   where qf.orgcode = \'@{user_practice_id}\''));
 }
 
-region_cancer_compare <- function(dbs, gp) {
+
+region_cancer_compare <- function(dbs, gp_county) {
   dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
   join address ad
   on qf.orgcode = ad.practiceid
-  where qf.orgcode = \'@{user_practice_id}\''));
+  where ad.county = \'@{gp_county}\' and qf.indicator like \'CAN%\''));
 }
+
+
+# Need to add a SQL like statement for gp county -> looking for inconsistent spelling maybe?
+region_noncancer_compare <- function(dbs, gp_county) {
+  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
+  join address ad
+  on qf.orgcode = ad.practiceid
+  where ad.county = \'@{gp_county}\''));
+}
+
+# Need to adapt this code
+wales_cancer_compare <- function(dbs, gp_county) {
+  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
+  join address ad
+  on qf.orgcode = ad.practiceid
+  where ad.county = \'@{gp_county}\' and qf.indicator like \'CAN%\''));
+}
+
+#Need to adapt this code
+wales_noncancer_compare <- function(dbs, gp_county) {
+  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
+  join address ad
+  on qf.orgcode = ad.practiceid
+  where ad.county = \'@{gp_county}\' and qf.indicator like \'CAN%\''));
+}
+
+
 
 
 #drugs_count <- gp_drugs %>% distinct() %>%
