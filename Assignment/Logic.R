@@ -58,21 +58,21 @@ disply_gp_top5_drugs<- function(dbs, gp) {
 diagnoised_with_cancer <- function(dbs, gp) {
   tryCatch({
     cancer_patients <- find_cancer_patients(dbs, gp)
-    all_pateients <- find_all_patients(dbs, gp)
+    all_patients <- find_all_patients(dbs, gp)
     
     cancer_count <- cancer_patients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
-    print(cancer_count)
+    #print(cancer_count)
     
-    all_pateient_count <- all_pateients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
-    print(all_pateient_count)
+    all_patient_count <- all_patients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+    #print(all_pateient_count)
     
-    cancer_percent <- round(((cancer_count/all_pateient_count)*100), digits = 2)
+    cancer_percent <- round(((cancer_count/all_patient_count)*100), digits = 2)
     
-    print(cancer_percent)
-    print('Total number of cancer patients ', cancer_count, '\n')
+    #print(cancer_percent)
+    cat(sprintf('Total number of cancer patients: %g', cancer_count))
     
-    print('Total number of practice diagnosis ', all_pateient_count, '\n')
-    print('Percentage of cancer patients ', cancer_percent, '%\n')
+    cat(sprintf('\nTotal number of practice diagnosis: %s', all_patient_count))
+    cat(sprintf('\nPercentage of cancer patients: %f', cancer_percent))
     
     #cancer_patients %>% gt() %>%
     #  tab_header(title = md("Patients with Cancer at selected GP Practice"))
