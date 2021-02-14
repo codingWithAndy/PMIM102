@@ -4,6 +4,7 @@ library(magrittr)
 library(dplyr)
 library(lubridate)
 library(gt)
+library(glue)
 
 
 ## Collect GP Practices
@@ -43,6 +44,8 @@ disply_gp_top5_drugs<- function(dbs, gp) {
   #top_5_table <- top_5 %>% group_by(bnfcode, bnfname) %>% 
   #  count(bnfname) %>% ungroup() %>% arrange(desc(n)) %>% head(5)
   #top_5_data <- top_5_table %>% arrange(desc(n))
+  cat("Top 5 medication pescribed ", gp," are:\n", sep="")
+  print(top_5_table)
   
   top_5_table %>% gt() %>%
     tab_header(title = md("Top 5 drugs perscribed for GP Practice")) %>%
@@ -50,8 +53,7 @@ disply_gp_top5_drugs<- function(dbs, gp) {
       bnfname = "Name",
       pescribed = "Total amount pescribed"
     )
-  cat("Top 5 medication pescribed ", gp," are:\n", sep="")
-  print(top_5_table)
+  
   
 }
 
@@ -68,56 +70,111 @@ diagnoised_with_cancer <- function(dbs, gp) {
     
     cancer_percent <- round(((cancer_count/all_patient_count)*100), digits = 2)
     
+    output_message <- glue('Total number of cancer patients: {cancer_count}
+         Total number of practice diagnosis: {all_patient_count}
+         Percentage of cancer patients: {cancer_percent}%')
+    
+    print(output_message)
+    
+    cancer_patients %>% gt() %>%
+      tab_header(title = md("Patients with Cancer at selected GP Practice"))
+    
     #print(cancer_percent)
-    cat(sprintf('Total number of cancer patients: %g', cancer_count))
-    
-    cat(sprintf('\nTotal number of practice diagnosis: %s', all_patient_count))
-    cat(sprintf('\nPercentage of cancer patients: %f', cancer_percent))
-    
-    #cancer_patients %>% gt() %>%
-    #  tab_header(title = md("Patients with Cancer at selected GP Practice"))
-    
-    #cancer_count <- 
-    #non_cancer_count <- 
-    #count_cancer_patients <- as.numeric(nrow(cancer_patients))
-    #count_all_patients <- as.numeric(nrow(all_pateients))
-    
-    #cat("The practice has a total of ", count_cancer_patients,  " patients diagnosed with cancer\n", sep = "")
-    #cat("The practice has a total of ", count_all_patients,  " patients diagnosed\n", sep = "")
-    
-    #percentage = (nrow(cancer_patients)/nrow(all_pateients))*100
-    #cat("The total percentage of patients diagnosed with cancer is: ", percentage,  "%\n", sep = "")
   },
   error=function(e) {
     print("This practice does not have any cancer patient records.")
   })
 }
 
+# Get region cancer details
+region_cancer_compare <- function(dbs, gp, gp_area) {
+  # get details from the database
+  gp_cancer_details <- find_cancer_patients(dbs, gp)
+  region_cancer_details <- find_region_cancer_patients(dbs, gp_area)
+  wales_cancer_details <- find_wales_cancer_patients(dbs)
+  
+  gp_cancer_count <- gp_cancer_details %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  region_cancer_count <- region_cancer_details %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  wales_cancer_count <- wales_cancer_details %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  
+  output_message <- glue('Total number of cancer gp patients: {gp_cancer_count}
+         Total number of area cancer patients: {region_cancer_count}
+         Total number of Wales cancer patients: {wales_cancer_count}')
+  
+  print(output_message)
+  
+  df <- data.frame(Area = c("GP", "Region", "Wales"), Number = c(as.integer(gp_cancer_count),as.integer(region_cancer_count),as.integer(wales_cancer_count)))
+  
+  #print(df)
+  
+  p<-ggplot(data=df, aes(x=Area, y=Number, color = Area, fill = Area, label = Number)) +
+    geom_bar(stat="identity")
+  p + geom_text(vjust=-1)
+  #print(gp_cancer_count)
+  #print(region_cancer_count)
+  #print(wales_cancer_count)
+  
+  #  all_cancer <- cancer %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  #all_patients <- cancer %>% select(field4) %>% summarise(sum(field4,na.rm = TRUE))
+  #cancer_rate_wales <-  (all_cancer/all_patients) *100 
+  #cat('\nThe cancer rate for all practices are:\n', sep='')
+  #print(cancer_rate_wales)
+}
+
+# Find the GP practice Area
 gp_region <- function(dbs, gp){
   selected_gp <- dbGetQuery(dbs, qq('select * from address
                       where practiceid = \'@{user_practice_id}\''))
   
   Region <- selected_gp %>% select(county) #county was chosen for regional analysis
   
+  Region_county <- paste(Region$county)
+  cat('\nThe practice ',user_practice_id, ' was located in following region.\n', Region_county, sep='')
+  
   Region %>% gt() %>%
     tab_header(title = md("GP Practice county location")) %>%
     cols_label(
       county = "Name",
     )
-  Region_county <- paste(Region$county)
-  cat('\nThe practice ',user_practice_id, ' was located in following region.\n', Region_county, sep='')
+  
   #print(Region_county)
   return (Region_county)
 } 
 
-region_cancer_compare <- function(dbs, gp, gp_area) {
-  cancer <- 
-  all_cancer <- cancer %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
-  all_patients <- cancer %>% select(field4) %>% summarise(sum(field4,na.rm = TRUE))
-  cancer_rate_wales <-  (all_cancer/all_patients) *100 
-  cat('\nThe cancer rate for all practices are:\n', sep='')
-  print(cancer_rate_wales)
+gp_spend_medication <- function(dbs) {
+  ##get practice details.
+  all_gps <- gp_practices(dbs)
+  print(all_gps[1,1])
+  
+  all_gp_spend <- list()
+  
+  for(i in 1:nrow(all_gps)) {
+    print(all_gps[i,1])
+    gp_data <- select_gp(dbs,all_gps[i,1])
+    if (nrow(gp_data) != 0) {
+      meds_cost <- gp_data  %>% select(actcost) %>%  summarise(sum(actcost,na.rm = TRUE))
+      meds_cost <- round(meds_cost, digits = 2)
+      
+      output_message <- glue("The practice {all_gps[i,1]} spent a total of £{meds_cost} on drugs")
+      print(output_message)
+      
+      #new_vec_idx <- nrow(all_gp_spend)
+      #all_gp_spend <- list(all_gp_spend, c(all_gps[i,1], as.numeric(meds_cost)))
+      #print(all_gp_spend[new_vec_idx-1])
+      
+      #for (i in 1:10) {
+      #df$x = rbind(df$x, i)
+      #df$y = rbind(df$y, toString(i))
+    #}
+    }
+    
+    rm(gp_data)
+  }
+  
+  ## Needs a for loop
+  ## creates a dictionary of all the practices values. Key practice: value total spend
 }
+
 
 
 

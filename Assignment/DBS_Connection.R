@@ -77,7 +77,8 @@ qof_achievement_columns <- function(dbs){
 gp_practices <- function(DBS) {
     dbGetQuery(DBS, '
              select Distinct(practiceid), area, county 
-               from address 
+               from address
+               where practiceid like \'W%\'
                order by county ASC')
 }
 
@@ -88,7 +89,7 @@ select_gp <- function(DBS, selected_practiceid) {
   ## Find the top drugs prescribed by the selected GP
   dbGetQuery(DBS, qq('
     select * from gp_data_up_to_2015
-    where practiceid = \'@{user_practice_id}\''))
+    where practiceid = \'@{selected_practiceid}\''))
   
 }
 
@@ -109,13 +110,19 @@ find_all_patients <- function(dbs, gp) {
 }
 
 
-region_cancer_compare <- function(dbs, gp_county) {
+find_region_cancer_patients <- function(dbs, gp_area) {
   dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
   join address ad
   on qf.orgcode = ad.practiceid
-  where ad.county = \'@{gp_county}\' and qf.indicator like \'CAN%\''));
+  where ad.county = \'@{gp_area}\' and qf.indicator like \'CAN%\''));
 }
 
+find_wales_cancer_patients <- function(dbs) {
+  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
+  join address ad
+  on qf.orgcode = ad.practiceid
+  where qf.indicator like \'CAN%\''));
+}
 
 # Need to add a SQL like statement for gp county -> looking for inconsistent spelling maybe?
 region_noncancer_compare <- function(dbs, gp_county) {
@@ -126,12 +133,7 @@ region_noncancer_compare <- function(dbs, gp_county) {
 }
 
 # Need to adapt this code
-wales_cancer_compare <- function(dbs, gp_county) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
-  join address ad
-  on qf.orgcode = ad.practiceid
-  where ad.county = \'@{gp_county}\' and qf.indicator like \'CAN%\''));
-}
+
 
 #Need to adapt this code
 wales_noncancer_compare <- function(dbs, gp_county) {
