@@ -35,15 +35,12 @@ disply_gp_top5_drugs<- function(dbs, gp) {
   
   top_5 <- select_gp(dbs, gp)
   
-  
   top_5_table <- top_5 %>% distinct() %>% filter(str_detect(bnfname, 'Tab')==TRUE) %>%
     mutate(total=sum(quantity)) %>% 
     group_by(bnfcode, bnfname) %>%
     summarise(pescribed=sum(items)) %>%
     arrange(desc(pescribed)) %>% head(5)
-  #top_5_table <- top_5 %>% group_by(bnfcode, bnfname) %>% 
-  #  count(bnfname) %>% ungroup() %>% arrange(desc(n)) %>% head(5)
-  #top_5_data <- top_5_table %>% arrange(desc(n))
+  
   cat("Top 5 medication pescribed ", gp," are:\n", sep="")
   print(top_5_table)
   
@@ -78,11 +75,9 @@ diagnoised_with_cancer <- function(dbs, gp) {
     
     cancer_patients %>% gt() %>%
       tab_header(title = md("Patients with Cancer at selected GP Practice"))
-    
-    #print(cancer_percent)
   },
   error=function(e) {
-    print("This practice does not have any cancer patient records.")
+    print("This practice does not have any cancer patient records or an error has occured.")
   })
 }
 
@@ -103,12 +98,19 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
   
   print(output_message)
   
-  df <- data.frame(Area = c("GP", "Region", "Wales"), Number = c(as.integer(gp_cancer_count),as.integer(region_cancer_count),as.integer(wales_cancer_count)))
+  df <- data.frame(Area = c("GP", "Region", "Wales"), 
+                   Number = c(as.integer(gp_cancer_count),as.integer(region_cancer_count),
+                              as.integer(wales_cancer_count))
+                   )
   
-  #print(df)
-  
-  p<-ggplot(data=df, aes(x=Area, y=Number, color = Area, fill = Area, label = Number)) +
+  p<-ggplot(data=df, aes(x=Area, 
+                         y=Number, 
+                         color = Area, 
+                         fill = Area, 
+                         label = Number)
+            ) +
     geom_bar(stat="identity")
+  
   p + geom_text(vjust=-1)
   #print(gp_cancer_count)
   #print(region_cancer_count)
@@ -124,7 +126,7 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
 # Find the GP practice Area
 gp_region <- function(dbs, gp){
   selected_gp <- dbGetQuery(dbs, qq('select * from address
-                      where practiceid = \'@{user_practice_id}\''))
+                      where practiceid = \'@{gp}\''))
   
   Region <- selected_gp %>% select(county) #county was chosen for regional analysis
   
@@ -144,12 +146,14 @@ gp_region <- function(dbs, gp){
 gp_spend_medication <- function(dbs) {
   ##get practice details.
   all_gps <- gp_practices(dbs)
-  print(all_gps[1,1])
+  df = data.frame(gp = character(), spend = numeric())
+  #print(all_gps[1,1])
+  #idx_counter = 1
   
   all_gp_spend <- list()
   
   for(i in 1:nrow(all_gps)) {
-    print(all_gps[i,1])
+    #print(all_gps[i,1])
     gp_data <- select_gp(dbs,all_gps[i,1])
     if (nrow(gp_data) != 0) {
       meds_cost <- gp_data  %>% select(actcost) %>%  summarise(sum(actcost,na.rm = TRUE))
@@ -157,6 +161,13 @@ gp_spend_medication <- function(dbs) {
       
       output_message <- glue("The practice {all_gps[i,1]} spent a total of £{meds_cost} on drugs")
       print(output_message)
+      
+      df = rbind(df, data.frame(gp = all_gps[i,1], spend = meds_cost))
+      #df$gp = rbind(df$gp, toString(all_gps[i,1]))
+      #df$spend = rbind(df$spend, meds_cost)
+      
+      #print(df)
+      
       
       #new_vec_idx <- nrow(all_gp_spend)
       #all_gp_spend <- list(all_gp_spend, c(all_gps[i,1], as.numeric(meds_cost)))
@@ -170,6 +181,16 @@ gp_spend_medication <- function(dbs) {
     
     rm(gp_data)
   }
+  
+  p<-ggplot(data=df, aes(x=gp, 
+                         y=spend, 
+                         color = gp, 
+                         fill = gp, 
+                         label = spend)
+  ) +
+    geom_bar(stat="identity")
+  
+  p + geom_text(vjust=-1)
   
   ## Needs a for loop
   ## creates a dictionary of all the practices values. Key practice: value total spend
