@@ -162,7 +162,7 @@ gp_spend_medication <- function(dbs) {
       output_message <- glue("The practice {all_gps[i,1]} spent a total of £{meds_cost} on drugs")
       print(output_message)
       
-      df = rbind(df, data.frame(gp = all_gps[i,1], spend = meds_cost))
+      df = rbind(df, data.frame(gp = gp_data, spend = as.numeric(meds_cost)))
       #df$gp = rbind(df$gp, toString(all_gps[i,1]))
       #df$spend = rbind(df$spend, meds_cost)
       
@@ -181,12 +181,12 @@ gp_spend_medication <- function(dbs) {
     
     rm(gp_data)
   }
-  
-  p<-ggplot(data=df, aes(x=gp, 
-                         y=spend, 
-                         color = gp, 
-                         fill = gp, 
-                         label = spend)
+  #aes(x= gp, 
+  #y= spend, 
+  #color = gp, 
+  #fill = gp, 
+  #label = spend)
+  p<-ggplot(data=df
   ) +
     geom_bar(stat="identity")
   
