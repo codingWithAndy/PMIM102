@@ -95,7 +95,8 @@ select_gp <- function(DBS, selected_practiceid) {
 
 
 find_cancer_patients <- function(dbs, selected_practiceid) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
+  dbGetQuery(dbs, qq('select qf.*, ad.county 
+  from qof_achievement qf
   join address ad
   on qf.orgcode = ad.practiceid
   where qf.indicator like \'CAN%\' and qf.orgcode = \'@{selected_practiceid}\''));
@@ -103,8 +104,9 @@ find_cancer_patients <- function(dbs, selected_practiceid) {
 
 
 find_all_patients <- function(dbs, selected_practiceid) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
-  join address ad
+  dbGetQuery(dbs, qq('select qf.*, ad.county 
+  from qof_achievement qf
+  left join address ad
   on qf.orgcode = ad.practiceid
   where qf.orgcode = \'@{selected_practiceid}\''));
 }

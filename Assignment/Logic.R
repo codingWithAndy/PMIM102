@@ -35,23 +35,28 @@ disply_gp_top5_drugs<- function(dbs, gp) {
   
   top_5 <- select_gp(dbs, gp)
   
-  top_5_table <- top_5 %>% distinct() %>% filter(str_detect(bnfname, 'Tab')==TRUE) %>%
-    mutate(total=sum(quantity)) %>% 
-    group_by(bnfcode, bnfname) %>%
-    summarise(pescribed=sum(items)) %>%
-    arrange(desc(pescribed)) %>% head(5)
-  
-  cat("Top 5 medication pescribed ", gp," are:\n", sep="")
-  print(top_5_table)
-  
-  top_5_table %>% gt() %>%
-    tab_header(title = md("Top 5 drugs perscribed for GP Practice")) %>%
-    cols_label(
-      bnfname = "Name",
-      pescribed = "Total amount pescribed"
-    )
-  
-  
+  tryCatch({
+    top_5_table <- top_5 %>% distinct() %>% filter(str_detect(bnfname, 'Tab')==TRUE) %>%
+      mutate(total=sum(quantity)) %>% 
+      group_by(bnfcode, bnfname) %>%
+      summarise(pescribed=sum(items)) %>%
+      arrange(desc(pescribed)) %>% head(5)
+    
+    cat("Top 5 medication pescribed ", gp," are:\n", sep="")
+    print(top_5_table)
+    
+    top_5_table %>% gt() %>%
+      tab_header(title = md("Top 5 drugs perscribed for GP Practice")) %>%
+      cols_label(
+        bnfname = "Name",
+        pescribed = "Total amount pescribed"
+      )
+    
+  },
+  error=function(e) {
+    print("This practice does not have any records or an error has occured.")
+    print("Please try again or select another GP practice ID.")
+  })
 }
 
 diagnoised_with_cancer <- function(dbs, gp) {
@@ -146,7 +151,7 @@ gp_region <- function(dbs, gp){
 gp_spend_medication <- function(dbs) {
   ##get practice details.
   all_gps <- gp_practices(dbs)
-  df = data.frame(gp = character(), spend = numeric())
+  drugs_df = data.frame(gp = character(), total_patients = numeric(),  spend = numeric())
   #print(all_gps[1,1])
   #idx_counter = 1
   
@@ -154,52 +159,51 @@ gp_spend_medication <- function(dbs) {
   
   for(i in 1:nrow(all_gps)) {
     #print(all_gps[i,1])
-    gp_data <- select_gp(dbs,all_gps[i,1])
+    selected_gp <- all_gps[i,1]
+    gp_data <- select_gp(dbs,selected_gp)
+    gp_patients <- find_all_patients(dbs,selected_gp)
+    
+    
     if (nrow(gp_data) != 0) {
+      
+      if (nrow(gp_patients) != 0) {
+        number_of_patients <- gp_patients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+      }
+      else {
+        number_of_patients <- 0
+      }
+      
       meds_cost <- gp_data  %>% select(actcost) %>%  summarise(sum(actcost,na.rm = TRUE))
       meds_cost <- round(meds_cost, digits = 2)
       
-      output_message <- glue("The practice {all_gps[i,1]} spent a total of £{meds_cost} on drugs")
+      output_message <- glue("The practice {selected_gp} spent a total of £{meds_cost} on drugs")
       print(output_message)
       
-      df = rbind(df, data.frame(gp = gp_data, spend = as.numeric(meds_cost)))
-      #df$gp = rbind(df$gp, toString(all_gps[i,1]))
-      #df$spend = rbind(df$spend, meds_cost)
+      drugs_df = rbind(drugs_df, data.frame(gp = selected_gp, total_patients = as.numeric(number_of_patients),  spend = as.numeric(meds_cost)))
       
-      #print(df)
-      
-      
-      #new_vec_idx <- nrow(all_gp_spend)
-      #all_gp_spend <- list(all_gp_spend, c(all_gps[i,1], as.numeric(meds_cost)))
-      #print(all_gp_spend[new_vec_idx-1])
-      
-      #for (i in 1:10) {
-      #df$x = rbind(df$x, i)
-      #df$y = rbind(df$y, toString(i))
-    #}
     }
     
-    rm(gp_data)
+    #rm(gp_data)
   }
-  #aes(x= gp, 
-  #y= spend, 
-  #color = gp, 
-  #fill = gp, 
-  #label = spend)
-  p<-ggplot(data=df
-  ) +
-    geom_bar(stat="identity")
+
+  return (drugs_df)
+}
+
+spend_correlation_check <- function(dbs, gp) {
+  # get spend of gp -> 'At practice level'
   
-  p + geom_text(vjust=-1)
+  # correlate spend to cancer
   
-  ## Needs a for loop
-  ## creates a dictionary of all the practices values. Key practice: value total spend
+  # correlate spend to diabetes
+  
+  # correlate spend to dementia
+  
+  # correlate spend to hypertension
 }
 
 
 
-
-library(data.table)
+#library(data.table)
 #install.packages('data.table')
 #sum_data <- raw_data[,.(SAMPLE = .N),by=c("DRUG")] ###sample counts records by DRUG column
 #sum_data[,RANK:=frank(-SAMPLE)] #ranks sample top n = 1

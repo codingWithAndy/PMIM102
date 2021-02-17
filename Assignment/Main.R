@@ -30,12 +30,30 @@ region_cancer_compare(data,user_practice_id,gp_location)
 # Q1 Part 2
 
 # Visualise how the spend on medication per patient varies by practice across Wales.
-gp_spend_medication(data)
+drugs_spend <- gp_spend_medication(data)
+
+
+print(drugs_spend)
+
+#aes(x= gp, 
+#y= spend, 
+#color = gp, 
+#fill = gp, 
+#label = spend)
+p<-ggplot(data=drugs_spend, aes(x = spend, 
+          y = gp, 
+          color = gp, 
+          fill = gp, 
+          label = spend)
+) +
+  geom_bar(stat="identity")
+
+p 
+
++ geom_text(vjust=-1)
 
 # Use statistical analysis to show whether the level of spending on medication is associated with the rates of the following diseases at a practice level: 
 # cancer, diabetes, dementia, hypertension. If you find statistically significant relationships, what disease is most strongly associated with spend on medication?
-
-
 
 
 #close the connection and unload the drivers.
