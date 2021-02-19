@@ -4,15 +4,20 @@ library(tidyverse)
 library(dbplyr)
 library(ggplot2)
 #Connecting to the PostGres gp_practice_data database.
-connect_to_dbs <- function(){
+connect_to_dbs <- function(port_number){
   #Make sure the RPostgreSQL package is available.
   require("RPostgreSQL");
   
   #Specify what driver is needed to connect to the database.
   drv = dbDriver("PostgreSQL");
-  dbConnect(drv, dbname = "gp_practice_data", 
-            host = "localhost", port = 5433,
+  con <- dbConnect(drv, dbname = "gp_practice_data", 
+            host = "localhost", port = port_number,
             user = "postgres", password = rstudioapi::askForPassword())
+  
+  print("A connection was made.\n")
+  print(dbListTables(con))
+  
+  return(con)
 }
 
 disconnect_dbs <- function(dbs) {

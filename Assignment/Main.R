@@ -2,7 +2,8 @@ source("DBS_Connection.R");
 source("Logic.R");
 
 # Connect to database
-data = connect_to_dbs();
+port_number <- 5433
+data = connect_to_dbs(port_number);
 
 # Display available practice IDs. 
 # Note: IDs appear in a seperate window, check tabs.
@@ -40,8 +41,8 @@ print(drugs_spend)
 #color = gp, 
 #fill = gp, 
 #label = spend)
-p<-ggplot(data=drugs_spend, aes(x = spend, 
-          y = gp, 
+p<-ggplot(data=drugs_spend, aes(x = total_patients, 
+          y = spend, 
           color = gp, 
           fill = gp, 
           label = spend)
@@ -54,7 +55,7 @@ p
 
 # Use statistical analysis to show whether the level of spending on medication is associated with the rates of the following diseases at a practice level: 
 # cancer, diabetes, dementia, hypertension. If you find statistically significant relationships, what disease is most strongly associated with spend on medication?
-
+spend_correlation_check(data,user_practice_id)
 
 #close the connection and unload the drivers.
 disconnect_dbs(data)

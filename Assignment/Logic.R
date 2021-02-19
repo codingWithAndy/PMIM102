@@ -13,13 +13,19 @@ display_gp_prac <- function(dbs) {
   View(gp_names)
 }
 
-select_gp_prac <- function() {
+select_gp_prac <- function() { #(dbs)
   valid_id <- FALSE
   while (valid_id != TRUE) {
     user_practice_id <- toupper(readline('Enter a practice ID (Wxxxxx):'))
     if (grepl('^W[0-9]{5}$', user_practice_id)){
       valid_id <- TRUE
       cat('The pracrtice id ', user_practice_id, 'is valid.')
+      #tryCatch({
+      #  select_gp(dbs,user_practice_id)
+      #},
+      #error=function(e) {
+      #  print("GP practice ID matches format but does not exist in the database, please try again.")
+      #})
     } else {
       cat('The entered practice ID (', user_practice_id,
           ') is not valid, please try again.\n', sep='')
@@ -189,11 +195,19 @@ gp_spend_medication <- function(dbs) {
   return (drugs_df)
 }
 
-spend_correlation_check <- function(dbs, gp) {
+spend_correlation_check <- function(dbs, selected_gp) {
   # get spend of gp -> 'At practice level'
-  
+  gp_patients <- find_all_patients(dbs,selected_gp)
+  gp_data <- select_gp(dbs,selected_gp)
+  meds_cost <- gp_data  %>% select(actcost) %>%  summarise(sum(actcost,na.rm = TRUE))
+  meds_cost <- round(meds_cost, digits = 2)
   # correlate spend to cancer
+  gp_cancer <- find_cancer_patients(dbs, selected_gp)
+  gp_cancer_count <- gp_cancer %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  print(gp_cancer)
   
+  cancer_cor <- cor.test(as.numeric(gp_cancer_count),as.numeric(meds_cost), method=c("pearson", "kendall", "spearman"))
+  print(cancer_cor)
   # correlate spend to diabetes
   
   # correlate spend to dementia
