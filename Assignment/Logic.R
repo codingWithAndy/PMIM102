@@ -37,13 +37,14 @@ select_gp_prac <- function() { #(dbs)
 
 
 # Find Practice top 5 drugs prescribed
-disply_gp_top5_drugs<- function(dbs, gp) {
+disply_gp_top5_drugs <- function(dbs, gp) {
   
   top_5 <- select_gp(dbs, gp)
   
   tryCatch({
-    top_5_table <- top_5 %>% distinct() %>% filter(str_detect(bnfname, 'Tab')==TRUE) %>%
-      mutate(total=sum(quantity)) %>% 
+    top_5_table <- top_5 %>% distinct() %>% 
+      filter(str_detect(bnfname, 'Tab')==TRUE) %>%
+      #mutate(total=sum(quantity)) %>% 
       group_by(bnfcode, bnfname) %>%
       summarise(pescribed=sum(items)) %>%
       arrange(desc(pescribed)) %>% head(5)
@@ -64,6 +65,35 @@ disply_gp_top5_drugs<- function(dbs, gp) {
     print("Please try again or select another GP practice ID.")
   })
 }
+
+region_top_5_drugs <- function(dbs, gp_location) {
+  
+  all_region_gps <- region_details(dbs, gp_location)
+    
+  region_top_5_table <- all_region_gps %>% 
+      distinct() %>% filter(str_detect(bnfname, 'Tab')==TRUE) %>%
+      #mutate(total=sum(quantity)) %>% 
+      group_by(bnfcode, bnfname) %>%
+      summarise(pescribed=sum(items)) %>%
+      arrange(desc(pescribed)) %>% head(5)
+    
+    #%>% distinct() %>% filter(str_detect(bnfname, 'Tab')==TRUE) %>%
+    #  mutate(total=sum(quantity)) %>% 
+    #  group_by(bnfcode, bnfname) %>%
+    #  summarise(pescribed=sum(items)) %>%
+    #  arrange(desc(pescribed)) %>% head(5)
+    
+    cat("Top 5 medication pescribed ", gp_location," are:\n", sep="")
+    print(region_top_5_table)
+
+    region_top_5_table %>% gt() %>%
+      tab_header(title = md("Top 5 drugs perscribed in selected region")) %>%
+      cols_label(
+        bnfname="Name",
+        pescribed="Total amount pescribed"
+      )
+}
+
 
 diagnoised_with_cancer <- function(dbs, gp) {
   tryCatch({
@@ -92,12 +122,13 @@ diagnoised_with_cancer <- function(dbs, gp) {
   })
 }
 
+
 # Get region cancer details
 region_cancer_compare <- function(dbs, gp, gp_area) {
   # get details from the database
   gp_cancer_details <- find_cancer_patients(dbs, gp)
   region_cancer_details <- find_region_cancer_patients(dbs, gp_area)
-  wales_cancer_details <- find_wales_cancer_patients(dbs)
+  wales_cancer_details <- find_wales_inicator_patients(dbs, 'CAN')
   
   gp_cancer_count <- gp_cancer_details %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
   region_cancer_count <- region_cancer_details %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
@@ -110,28 +141,19 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
   print(output_message)
   
   df <- data.frame(Area = c("GP", "Region", "Wales"), 
-                   Number = c(as.integer(gp_cancer_count),as.integer(region_cancer_count),
+                   Total = c(as.integer(gp_cancer_count),as.integer(region_cancer_count),
                               as.integer(wales_cancer_count))
                    )
   
   p<-ggplot(data=df, aes(x=Area, 
-                         y=Number, 
+                         y=Total, 
                          color = Area, 
                          fill = Area, 
-                         label = Number)
+                         label = Total)
             ) +
     geom_bar(stat="identity")
   
   p + geom_text(vjust=-1)
-  #print(gp_cancer_count)
-  #print(region_cancer_count)
-  #print(wales_cancer_count)
-  
-  #  all_cancer <- cancer %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
-  #all_patients <- cancer %>% select(field4) %>% summarise(sum(field4,na.rm = TRUE))
-  #cancer_rate_wales <-  (all_cancer/all_patients) *100 
-  #cat('\nThe cancer rate for all practices are:\n', sep='')
-  #print(cancer_rate_wales)
 }
 
 # Find the GP practice Area
@@ -154,24 +176,24 @@ gp_region <- function(dbs, gp){
   return (Region_county)
 } 
 
+
 gp_spend_medication <- function(dbs) {
   ##get practice details.
   all_gps <- gp_practices(dbs)
-  drugs_df = data.frame(gp = character(), total_patients = numeric(),  spend = numeric())
-  #print(all_gps[1,1])
-  #idx_counter = 1
+  drugs_df = data.frame(gp = character(), 
+                        total_patients = numeric(),  
+                        spend = numeric())
+
   
   all_gp_spend <- list()
   
   for(i in 1:nrow(all_gps)) {
-    #print(all_gps[i,1])
     selected_gp <- all_gps[i,1]
     gp_data <- select_gp(dbs,selected_gp)
     gp_patients <- find_all_patients(dbs,selected_gp)
     
     
     if (nrow(gp_data) != 0) {
-      
       if (nrow(gp_patients) != 0) {
         number_of_patients <- gp_patients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
       }
@@ -191,6 +213,13 @@ gp_spend_medication <- function(dbs) {
     
     #rm(gp_data)
   }
+  
+  p<-ggplot(data=drugs_spend, aes(x = total_patients, 
+                                  y = spend)
+  ) +
+    geom_point()
+  
+  print(p) 
 
   return (drugs_df)
 }
@@ -202,11 +231,13 @@ spend_correlation_check <- function(dbs, selected_gp) {
   meds_cost <- gp_data  %>% select(actcost) %>%  summarise(sum(actcost,na.rm = TRUE))
   meds_cost <- round(meds_cost, digits = 2)
   # correlate spend to cancer
-  gp_cancer <- find_cancer_patients(dbs, selected_gp)
-  gp_cancer_count <- gp_cancer %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
-  print(gp_cancer)
+  #gp_cancer <- find_cancer_patients(dbs, selected_gp)
+  #gp_cancer_count <- gp_cancer %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  #print(gp_cancer)
   
-  cancer_cor <- cor.test(as.numeric(gp_cancer_count),as.numeric(meds_cost), method=c("pearson", "kendall", "spearman"))
+  wales_cancer_details <- find_wales_inicator_patients(dbs, 'CAN')
+  
+  cancer_cor <- cor.test(as.numeric(wales_cancer_details),as.numeric(meds_cost), method=c("pearson", "kendall", "spearman"))
   print(cancer_cor)
   # correlate spend to diabetes
   

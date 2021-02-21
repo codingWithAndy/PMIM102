@@ -20,42 +20,31 @@ gp_location <- gp_region(data,user_practice_id)
 # Display top five drugs the practice prescribe the most.
 disply_gp_top5_drugs(data,user_practice_id)
 
-# Display the percentage of this practice’s patients that have been diagnosed with cancer
-#find_cancer_patients(data,user_practice_id) ### delete by the end of project!!!
+# Table displayed in viewer and output in console below.
 diagnoised_with_cancer(data,user_practice_id)
 
-# Create a plot that shows how this practice’s rate of cancer compares to the cancer rate for region the practice is in, 
-# as well as the rate for all of Wales Note: Do this via health board (hb in gp_data_up_to_2015)
+# Outputs regional cancer message to the console below and in Plots.
 region_cancer_compare(data,user_practice_id,gp_location)
 
 # Q1 Part 2
-
 # Visualise how the spend on medication per patient varies by practice across Wales.
 drugs_spend <- gp_spend_medication(data)
-
-
 print(drugs_spend)
-
-#aes(x= gp, 
-#y= spend, 
-#color = gp, 
-#fill = gp, 
-#label = spend)
-p<-ggplot(data=drugs_spend, aes(x = total_patients, 
-          y = spend, 
-          color = gp, 
-          fill = gp, 
-          label = spend)
-) +
-  geom_bar(stat="identity")
-
-p 
-
-+ geom_text(vjust=-1)
 
 # Use statistical analysis to show whether the level of spending on medication is associated with the rates of the following diseases at a practice level: 
 # cancer, diabetes, dementia, hypertension. If you find statistically significant relationships, what disease is most strongly associated with spend on medication?
-spend_correlation_check(data,user_practice_id)
+spend_correlation_check(drugs_spend)
+
+
+###### PART 2
+#### Top 5 drugs for WAL
+region_top_5_drugs(data, gp_location)
+
+#### % of patients that smoke in gp, region, wal + Vis
+
+
+### GP total spend on smoking drugs compared to non + Vis
+
 
 #close the connection and unload the drivers.
 disconnect_dbs(data)

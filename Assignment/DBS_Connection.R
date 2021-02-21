@@ -98,60 +98,75 @@ select_gp <- function(DBS, selected_practiceid) {
   
 }
 
+select_all_gp <- function(dbs) {
+  ## Find the top drugs prescribed by the selected GP
+  dbGetQuery(dbs, qq('
+    select *
+    from gp_data_up_to_2015
+    where practiceid like \'W%\''))
+}
+
+region_details <- function(dbs, gp_area) {
+  dbGetQuery(dbs, qq('
+  select gp.*, ad.county
+  from gp_data_up_to_2015 gp
+  left join address ad
+  on gp.practiceid = ad.practiceid
+  where ad.county = \'@{gp_area}\'
+                     '));
+}
 
 find_cancer_patients <- function(dbs, selected_practiceid) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county 
+  dbGetQuery(dbs, qq('
+  select qf.*, ad.county 
   from qof_achievement qf
   join address ad
   on qf.orgcode = ad.practiceid
-  where qf.indicator like \'CAN%\' and qf.orgcode = \'@{selected_practiceid}\''));
+  where qf.indicator like \'CAN%\' 
+                     and qf.orgcode = \'@{selected_practiceid}\'
+                     '));
 }
 
 
 find_all_patients <- function(dbs, selected_practiceid) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county 
+  dbGetQuery(dbs, qq('
+  select qf.*, ad.county 
   from qof_achievement qf
   left join address ad
   on qf.orgcode = ad.practiceid
-  where qf.orgcode = \'@{selected_practiceid}\''));
+  where qf.orgcode = \'@{selected_practiceid}\'
+                     '));
 }
 
 
 find_region_cancer_patients <- function(dbs, gp_area) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
-  join address ad
+  dbGetQuery(dbs, qq('
+  select qf.*, ad.county 
+  from qof_achievement qf
+  left join address ad
   on qf.orgcode = ad.practiceid
-  where ad.county = \'@{gp_area}\' and qf.indicator like \'CAN%\''));
+  where ad.county = \'@{gp_area}\' 
+                     and qf.indicator like \'CAN%\''));
 }
 
-find_wales_cancer_patients <- function(dbs) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
-  join address ad
-  on qf.orgcode = ad.practiceid
-  where qf.indicator like \'CAN%\''));
+find_wales_inicator_patients <- function(dbs, ind) {
+  dbGetQuery(dbs, qq('
+  select qf.* 
+  from qof_achievement qf
+  where qf.indicator like \'@{ind}%\'
+                     and qf.orgcode = \'WAL\''));
 }
 
 # Need to add a SQL like statement for gp county -> looking for inconsistent spelling maybe?
 region_noncancer_compare <- function(dbs, gp_county) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
+  dbGetQuery(dbs, qq('
+  select qf.*, ad.county 
+  from qof_achievement qf
   join address ad
   on qf.orgcode = ad.practiceid
-  where ad.county = \'@{gp_county}\''));
+  where ad.county = \'@{gp_county}\'
+                     '));
 }
-
-# Need to adapt this code
-
-
-#Need to adapt this code
-wales_noncancer_compare <- function(dbs, gp_county) {
-  dbGetQuery(dbs, qq('select qf.*, ad.county from qof_achievement qf
-  join address ad
-  on qf.orgcode = ad.practiceid
-  where ad.county = \'@{gp_county}\' and qf.indicator like \'CAN%\''));
-}
-
-
-
 
 #drugs_count <- gp_drugs %>% distinct() %>%
 #  filter(str_detect(bnfname, 'Tab')==TRUE) %>%
