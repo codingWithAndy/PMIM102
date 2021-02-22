@@ -39,13 +39,22 @@ spend_correlation_check(drugs_spend)
 
 
 ############################## PART 2 ##########################################
+## Region select like practice id?
+
 #### Top 5 drugs for WAL
 region_top_5_drugs(data, gp_location)
 
 #### % of patients that smoke in gp, region, Wales + Vis
+declared_as_smokers(data,gp_location)
+
+### Region total smoking compared to Wales + Vis
+region_smoking_compare(data,gp_location)
+
+### Some drugs spend equvilant
 
 
-### GP total spend on smoking drugs compared to non + Vis
+#### Some correlation check
+
 
 
 ####################### Database Disconnect ####################################

@@ -120,13 +120,33 @@ find_cancer_patients <- function(dbs, selected_practiceid) {
   dbGetQuery(dbs, qq('
   select qf.*, ad.county 
   from qof_achievement qf
-  join address ad
+  left join address ad
   on qf.orgcode = ad.practiceid
   where qf.indicator like \'CAN%\' 
                      and qf.orgcode = \'@{selected_practiceid}\'
                      '));
 }
 
+find_smoker_patients <- function(dbs, gp_area) {
+  dbGetQuery(dbs, qq('
+  select qf.*, ad.county 
+  from qof_achievement qf
+  left join address ad
+  on qf.orgcode = ad.practiceid
+  where qf.indicator like \'SMO%\' 
+                     and ad.county like \'%@{gp_area}%\'
+                     '));
+}
+
+find_all_region_patients <- function(dbs, gp_area) {
+  dbGetQuery(dbs, qq('
+  select qf.*, ad.county 
+  from qof_achievement qf
+  left join address ad
+  on qf.orgcode = ad.practiceid
+  where ad.county like \'%@{gp_area}%\'
+                     '));
+}
 
 find_all_patients <- function(dbs, selected_practiceid) {
   dbGetQuery(dbs, qq('
@@ -145,7 +165,7 @@ find_region_cancer_patients <- function(dbs, gp_area) {
   from qof_achievement qf
   left join address ad
   on qf.orgcode = ad.practiceid
-  where ad.county = \'@{gp_area}\' 
+  where ad.county = \'%@{gp_area}%\' 
                      and qf.indicator like \'CAN%\''));
 }
 
@@ -162,7 +182,7 @@ region_noncancer_compare <- function(dbs, gp_county) {
   dbGetQuery(dbs, qq('
   select qf.*, ad.county 
   from qof_achievement qf
-  join address ad
+  left join address ad
   on qf.orgcode = ad.practiceid
   where ad.county = \'@{gp_county}\'
                      '));

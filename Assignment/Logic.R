@@ -122,6 +122,31 @@ diagnoised_with_cancer <- function(dbs, gp) {
   })
 }
 
+declared_as_smokers <- function(dbs,gp_area){
+  tryCatch({
+    smoker_patients <- find_smoker_patients(dbs, gp_area)
+    all_region_patients <- find_all_region_patients(dbs, gp_area)
+    
+    
+    smokers_count <- smoker_patients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+    all_region_count <- all_region_patients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+    smoker_percent <- round(((smokers_count/all_region_count)*100), digits = 2)
+    
+  
+    output_message <- glue('Total number of patients declared as smokers: {smokers_count}
+         Total number of region diagnosis: {all_region_count}
+         Percentage of smoking patients: {smoker_percent}%')
+    
+    print(output_message)
+    
+    smoker_patients %>% gt() %>%
+      tab_header(title = md("Patients who are smokers at selected region"))
+  },
+  error=function(e) {
+    print("This practice does not have any cancer patient records or an error has occured.")
+  })
+}
+
 
 # Get region cancer details
 region_cancer_compare <- function(dbs, gp, gp_area) {
@@ -151,6 +176,36 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
                          fill = Area, 
                          label = Total)
             ) +
+    geom_bar(stat="identity")
+  
+  p + geom_text(vjust=-1)
+}
+
+region_smoking_compare <- function(dbs,gp_area) {
+  smoker_patients <- find_smoker_patients(dbs, gp_area)
+  wales_smoker_details <- find_wales_inicator_patients(dbs, 'SMO')
+  
+  region_smoker_count <- smoker_patients %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  wales_smoker_count <- wales_smoker_details %>% select(numerator) %>%  summarise(sum(numerator,na.rm = TRUE))
+  
+  output_message <- glue('
+         Total number of people in the region declared as a smoker: {region_smoker_count}
+         Total number of people in Wales declared as a smoker: {wales_smoker_count}')
+  
+  
+  print(output_message)
+  
+  df <- data.frame(Area = c("Region", "Wales"), 
+                   Total = c(as.integer(region_smoker_count),
+                             as.integer(wales_smoker_count))
+  )
+  
+  p<-ggplot(data=df, aes(x=Area, 
+                         y=Total, 
+                         color = Area, 
+                         fill = Area, 
+                         label = Total)
+  ) +
     geom_bar(stat="identity")
   
   p + geom_text(vjust=-1)
