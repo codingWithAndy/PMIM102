@@ -9,20 +9,26 @@ connect_to_dbs <- function(port_number){
   require("RPostgreSQL");
   
   #Specify what driver is needed to connect to the database.
-  drv = dbDriver("PostgreSQL");
+  drv <- dbs_drv()
   con <- dbConnect(drv, dbname = "gp_practice_data", 
             host = "localhost", port = port_number,
             user = "postgres", password = rstudioapi::askForPassword())
   
-  print("A connection was made.\n")
-  print(dbListTables(con))
-  
+  print("A connection was made.")
   return(con)
 }
 
-disconnect_dbs <- function(dbs) {
-  dbDisconnect(dbs)
-  dbUnloadDriver(drv)
+dbs_drv <- function(){
+  drv = dbDriver("PostgreSQL");
+  return(drv)
+}
+
+
+disconnect_dbs <- function(con,drv) {
+  #dbDisconnect(dbs)
+  #drv <- dbs_drv()
+  #dbUnloadDriver(drv)
+  lapply(dbListConnections(drv = dbDriver("PostgreSQL")), function(x) {dbDisconnect(conn = x)})
   print("Database and driver has been disconnected.")
 }
 
@@ -90,12 +96,38 @@ gp_practices <- function(DBS) {
 ############### Main questions start!
 
 ## Question 1a
-select_gp <- function(DBS, selected_practiceid) {
+select_gp <- function(dbs, selected_practiceid) {
   ## Find the top drugs prescribed by the selected GP
-  dbGetQuery(DBS, qq('
+  dbGetQuery(dbs, qq('
     select * from gp_data_up_to_2015
     where practiceid = \'@{selected_practiceid}\''))
   
+}
+
+select_region <- function(dbs) {
+  dbGetQuery(dbs, qq('
+    select distinct(UPPER(county))
+    from address
+    where county is not null'))
+}
+
+region_select <- function(dbs, region) {
+  dbGetQuery(dbs, qq('
+  select qf.*, ad.county 
+  from qof_achievement qf
+  left join address ad
+  on qf.orgcode = ad.practiceid
+  where ad.county like \'%@{region}%\''))
+}
+
+select_all_region_details <- function(dbs) {
+  dbGetQuery(dbs, qq('
+  select qf.*, gp.*, ad.county 
+from qof_achievement qf
+left join address ad
+on qf.orgcode = ad.practiceid
+left join gp_data_up_to_2015 gp
+on ad.practiceid = gp.practiceid'))
 }
 
 select_all_gp <- function(dbs) {
@@ -112,7 +144,7 @@ region_details <- function(dbs, gp_area) {
   from gp_data_up_to_2015 gp
   left join address ad
   on gp.practiceid = ad.practiceid
-  where ad.county = \'@{gp_area}\'
+  where upper(ad.county) like \'%@{gp_area}%\'
                      '));
 }
 
@@ -165,7 +197,7 @@ find_region_cancer_patients <- function(dbs, gp_area) {
   from qof_achievement qf
   left join address ad
   on qf.orgcode = ad.practiceid
-  where ad.county = \'%@{gp_area}%\' 
+  where ad.county like \'%@{gp_area}%\' 
                      and qf.indicator like \'CAN%\''));
 }
 
@@ -186,6 +218,19 @@ region_noncancer_compare <- function(dbs, gp_county) {
   on qf.orgcode = ad.practiceid
   where ad.county = \'@{gp_county}\'
                      '));
+}
+
+find_all_indi_patients <- function(dbs, indi) {
+  dbGetQuery(dbs, qq('
+    select * 
+    from qof_achievement
+    where indicator like \'@{indi}\''));
+}
+
+find_all_gp_spend <- function(dbs) {
+  dbGetQuery(dbs, qq('
+    select * 
+    from gp_data_up_to_2015'));
 }
 
 #drugs_count <- gp_drugs %>% distinct() %>%

@@ -3,8 +3,7 @@ source("Logic.R");
 
 ######################### Database Connect #####################################
 port_number <- 5433
-data = connect_to_dbs(port_number);
-
+data <- connect_to_dbs(port_number);
 
 ########################## GP Selection ########################################
 
@@ -35,23 +34,24 @@ drugs_spend <- gp_spend_medication(data)
 
 # Use statistical analysis to show whether the level of spending on medication is associated with the rates of the following diseases at a practice level: 
 # cancer, diabetes, dementia, hypertension. If you find statistically significant relationships, what disease is most strongly associated with spend on medication?
-spend_correlation_check(drugs_spend)
+spend_correlation_check(data)
 
 
 ############################## PART 2 ##########################################
 ## Region select like practice id?
+selected_region <- region_select(data) ## Come back to this later
 
 #### Top 5 drugs for WAL
-region_top_5_drugs(data, gp_location)
+region_top_5_drugs(data,selected_region)
 
 #### % of patients that smoke in gp, region, Wales + Vis
-declared_as_smokers(data,gp_location)
+declared_as_smokers(data,selected_region)
 
 ### Region total smoking compared to Wales + Vis
-region_smoking_compare(data,gp_location)
+region_smoking_compare(data,selected_region)
 
 ### Some drugs spend equvilant
-
+gp_region_medication(data,selected_region)
 
 #### Some correlation check
 
@@ -59,7 +59,7 @@ region_smoking_compare(data,gp_location)
 
 ####################### Database Disconnect ####################################
 #close the connection and unload the drivers.
-disconnect_dbs(data)
+disconnect_dbs()
 
 #Calls all columns from the qof_achievement table.
 qof <- qof_indicator_columns_info(data)
