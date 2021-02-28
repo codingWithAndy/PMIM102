@@ -244,53 +244,151 @@ region_smoking_compare <- function(dbs,gp_area) {
 
 
 ####################### Region Drugs Spend ####################
-gp_region_medication <- function(dbs, region) {
-  all_regions <- select_all_region_details(dbs) ##region_select(dbs, region)
+gp_region_medication <- function(dbs) {
+  #all_regions <- select_all_region_details(dbs) ##region_select(dbs, region)
   
-  print(all_regions)
+  available_regions <- select_region(dbs)
+  drugs_df = data.frame(region = character(), 
+                        total_patients = numeric(),  
+                        spend = numeric())
   
-  #all_region_spen
-    drugs_df = data.frame(region = character(), 
-                          total_patients = numeric(),  
-                          spend = numeric())
+  #print(available_regions[1,1])
   
-  for(i in 1:nrow(all_regions)) {
-    selected_region <- all_regions[i,1]## n2c
-    region_data <- region_select(dbs, region)## n2c
-    gp_patients <- find_all_patients(dbs,selected_gp)## n2c
+  for (i in 1:nrow(available_regions)) {
+    selected_region <- available_regions[i,1]
+    regional_data <- region_patient_and_drugs_spend(dbs, selected_region, 'SMO') ### big regional check 3 table join.
     
-    
-    if (nrow(gp_data) != 0) {
-      if (nrow(gp_patients) != 0) {
-        number_of_patients <- gp_patients %>% select(numerator) %>% 
-          summarise(sum(numerator,na.rm = TRUE))
-      }
-      else {
-        number_of_patients <- 0
-      }
+    if (nrow(regional_data) != 0) {
+      regional_patient_count <- regional_data %>% select(numerator) %>% 
+        summarise(sum(numerator,na.rm = TRUE))
       
-      meds_cost <- gp_data  %>% select(actcost) %>%  
+      regional_meds_cost <- regional_data  %>% select(actcost) %>%  
         summarise(sum(actcost,na.rm = TRUE))
-      meds_cost <- round(meds_cost, digits = 2)
+      regional_meds_cost <- round(regional_meds_cost, digits = 2)
       
-      output_message <- glue("The practice {selected_gp} spent a total of 
-                             £{meds_cost} on drugs")
+      output_message <- glue("The practice {selected_region} spent a total of £{regional_meds_cost} on drugs with {regional_patient_count} patient count")
       print(output_message)
       
       drugs_df = rbind(drugs_df, 
                        data.frame(region = selected_region, 
-                                           total_patients = as.numeric(number_of_patients),  
-                                           spend = as.numeric(meds_cost)))
+                                  total_patients = as.numeric(regional_patient_count),  
+                                  spend = as.numeric(regional_meds_cost)))
     }
+    
   }
   
-  p<-ggplot(data=drugs_spend, aes(x = total_patients, 
+  #print(all_regions)
+  
+  
+  #all_region_spen
+    
+  
+  #for(i in 1:nrow(all_regions)) {
+  #  selected_region <- all_regions[i,1]## n2c
+  #  region_data <- region_select(dbs, region)## n2c
+  #  gp_patients <- find_all_patients(dbs,selected_gp)## n2c
+  #  
+  #  
+  #  if (nrow(gp_data) != 0) {
+  #    if (nrow(gp_patients) != 0) {
+  #      number_of_patients <- gp_patients %>% select(numerator) %>% 
+  #        summarise(sum(numerator,na.rm = TRUE))
+  #    }
+  #    else {
+  #      number_of_patients <- 0
+  #    }
+  #    
+  #    meds_cost <- gp_data  %>% select(actcost) %>%  
+  #      summarise(sum(actcost,na.rm = TRUE))
+  #    meds_cost <- round(meds_cost, digits = 2)
+  #    
+  #    output_message <- glue("The practice {selected_gp} spent a total of 
+  #                           £{meds_cost} on drugs")
+  #    print(output_message)
+  #    
+  #    drugs_df = rbind(drugs_df, 
+  #                     data.frame(region = selected_region, 
+  #                                         total_patients = as.numeric(number_of_patients),  
+  #                                         spend = as.numeric(meds_cost)))
+  #  }
+  #}
+  
+  p<-ggplot(data=drugs_df, aes(x = total_patients, 
                                   y = spend)
   ) +
     geom_point()
   print(p) 
   
   return (drugs_df)
+}
+
+region_correlation_check <- function(dbs) {
+  available_regions <- select_region(dbs)
+  drugs_df = data.frame(region = character(), 
+                        total_patients = numeric(),  
+                        spend = numeric())
+  drugs_df = data.frame(region = character(), 
+                        total_patients = numeric(),  
+                        spend = numeric())
+  
+  for (i in 1:nrow(available_regions)) {
+    selected_region <- available_regions[i,1]
+    regional_data <- region_patient_and_drugs_spend(dbs, selected_region, 'SMO') ### big regional check 3 table join.
+    
+    if (nrow(regional_data) != 0) {
+      regional_patient_count <- regional_data %>% select(numerator) %>% 
+        summarise(sum(numerator,na.rm = TRUE))
+      
+      regional_meds_cost <- regional_data  %>% select(actcost) %>%  
+        summarise(sum(actcost,na.rm = TRUE))
+      regional_meds_cost <- round(regional_meds_cost, digits = 2)
+      
+      #output_message <- glue("The practice {selected_region} spent a total of £{regional_meds_cost} on drugs with {regional_patient_count} patient count")
+      #print(output_message)
+      
+      drugs_df = rbind(drugs_df, 
+                       data.frame(region = selected_region, 
+                                  total_patients = as.numeric(regional_patient_count),  
+                                  spend = as.numeric(regional_meds_cost)))
+    }
+  }
+  region_smoking_cor <- cor.test(drugs_df$spend,drugs_df$total_patients, method=c("pearson", "kendall", "spearman"))
+  print(region_smoking_cor)
+  print(region_smoking_cor["estimate"])
+  print(region_smoking_cor["statistic"]) 
+  
+  drugs_df2 = data.frame(region = character(), 
+                        total_patients = numeric(),  
+                        spend = numeric())
+  
+  #print(available_regions[1,1])
+  
+  for (i in 1:nrow(available_regions)) {
+    selected_region <- available_regions[i,1]
+    regional_data <- region_patient_and_drugs_spend(dbs, selected_region, 'DM') ### big regional check 3 table join.
+    
+    if (nrow(regional_data) != 0) {
+      regional_patient_count <- regional_data %>% select(numerator) %>% 
+        summarise(sum(numerator,na.rm = TRUE))
+      
+      regional_meds_cost <- regional_data  %>% select(actcost) %>%  
+        summarise(sum(actcost,na.rm = TRUE))
+      regional_meds_cost <- round(regional_meds_cost, digits = 2)
+      
+      #output_message <- glue("The practice {selected_region} spent a total of £{regional_meds_cost} on drugs with {regional_patient_count} patient count")
+      #print(output_message)
+      
+      drugs_df2 = rbind(drugs_df2, 
+                       data.frame(region = selected_region, 
+                                  total_patients = as.numeric(regional_patient_count),  
+                                  spend = as.numeric(regional_meds_cost)))
+    }
+  }
+  
+  region_dementia_cor <- cor.test(drugs_df2$spend,drugs_df2$total_patients, method=c("pearson", "kendall", "spearman"))
+  print(region_dementia_cor)
+  print(region_dementia_cor["estimate"])
+  print(region_dementia_cor["statistic"]) 
 }
 
 

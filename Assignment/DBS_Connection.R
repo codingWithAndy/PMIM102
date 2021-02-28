@@ -233,6 +233,19 @@ find_all_gp_spend <- function(dbs) {
     from gp_data_up_to_2015'));
 }
 
+region_patient_and_drugs_spend <- function(dbs, gp_area, indi) {
+  dbGetQuery(dbs, qq('
+    select *
+    from address ad
+    left join gp_data_up_to_2015 gp
+    on ad.practiceid = gp.practiceid
+    left join qof_achievement qf
+    on ad.practiceid = qf.orgcode
+    where ad.county like \'%@{gp_area}%\'
+    and qf.indicator like \'@{indi}%\'
+                     '));
+}
+
 #drugs_count <- gp_drugs %>% distinct() %>%
 #  filter(str_detect(bnfname, 'Tab')==TRUE) %>%
 #  mutate(cost=quantity/items*actcost) %>%

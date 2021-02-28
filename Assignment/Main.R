@@ -5,6 +5,12 @@ source("Logic.R");
 port_number <- 5433
 data <- connect_to_dbs(port_number);
 
+
+#################### Database General Exploration ###############################
+
+## Add a way to just view all of the tables i.e select * from etc
+
+
 ########################## GP Selection ########################################
 
 # Display available practice IDs. 
@@ -51,11 +57,27 @@ declared_as_smokers(data,selected_region)
 region_smoking_compare(data,selected_region)
 
 ### Some drugs spend equvilant
-gp_region_medication(data,selected_region)
+gp_region_spend <- gp_region_medication(data)
 
+print(gp_region_spend)
+p<-ggplot(data=gp_region_spend, aes(x = total_patients, 
+                             y = spend
+                             )
+) +
+  geom_point()
+#p + theme(legend.position = "none")
+print(p) 
+
+nrow(gp_region_spend)
 #### Some correlation check
+region_correlation_check(data)
 
+region_smoking_cor <- cor.test(gp_region_spend$spend,gp_region_spend$total_patients, method=c("pearson", "kendall", "spearman"))
+print(region_smoking_cor)
+print(region_smoking_cor["estimate"])
+print(region_smoking_cor["statistic"]) 
 
+region_correlation_check(data)
 
 ####################### Database Disconnect ####################################
 #close the connection and unload the drivers.
