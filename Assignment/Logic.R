@@ -177,10 +177,14 @@ declared_as_smokers <- function(dbs,gp_area){
 
 ################### Region Cancer Diagnosis Compare Wales ######################
 region_cancer_compare <- function(dbs, gp, gp_area) {
+  #### To DO: NEed to find % rates of gp, region and wales
+  
   # get details from the database
   gp_cancer_details <- find_cancer_patients(dbs, gp)
   region_cancer_details <- find_region_cancer_patients(dbs, gp_area)
+  all_region_patients <- find_all_region_diagnosis(dbs, gp_area)
   wales_cancer_details <- find_wales_inicator_patients(dbs, 'CAN')
+  all_wales_patients <- find_all_wales_patients(dbs)
   
   gp_cancer_count <- gp_cancer_details %>% select(numerator) %>%  
     summarise(sum(numerator,na.rm = TRUE))
@@ -189,11 +193,18 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
   wales_cancer_count <- wales_cancer_details %>% select(numerator) %>%  
     summarise(sum(numerator,na.rm = TRUE))
   
+  
+  region_percent <- (region_cancer_count/all_region_patients)*100
+  print(round(region_percent,digits = 2))
+  wales_percent <- wales_cancer_count/all_wales_patients
+  
   output_message <- glue('Total number of cancer gp patients: {gp_cancer_count}
          Total number of area cancer patients: {region_cancer_count}
          Total number of Wales cancer patients: {wales_cancer_count}')
   print(output_message)
   
+  
+  #Og chart
   df <- data.frame(Area = c("GP", "Region", "Wales"), 
                    Total = c(as.integer(gp_cancer_count),
                              as.integer(region_cancer_count),
@@ -213,20 +224,33 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
 
 
 ################### Region Smoker Diagnosis Compare Wales ######################
+#### Been editting this chart!!!!! 
+
 region_smoking_compare <- function(dbs,gp_area) {
   smoker_patients <- find_smoker_patients(dbs, gp_area)
   wales_smoker_details <- find_wales_inicator_patients(dbs, 'SMO')
+  
+  all_region_diagnosis <- find_all_region_diagnosis(dbs,gp_area)
+  all_wales_diagnosis <- find_all_wales_patients(dbs)
   
   region_smoker_count <- smoker_patients %>% select(numerator) %>%  
     summarise(sum(numerator,na.rm = TRUE))
   wales_smoker_count <- wales_smoker_details %>% select(numerator) %>%  
     summarise(sum(numerator,na.rm = TRUE))
   
+  region_smoker_percent <- round(((region_smoker_count/all_region_diagnosis)*100), digits = 2)
+  wales_smoker_percent <- round(((wales_smoker_count/all_wales_diagnosis)*100), digits = 2)
+  
   output_message <- glue('
          Total number of people in the region declared as a smoker: {region_smoker_count}
-         Total number of people in Wales declared as a smoker: {wales_smoker_count}')
+         The % of patients in this region declared as a smoker: {region_smoker_percent}%
+         Total number of people in Wales declared as a smoker: {wales_smoker_count}
+         The % of patients in Wales declared as a smoker: {wales_smoker_percent}%')
   print(output_message)
   
+  
+  #og
+  # Looks at total counts
   df <- data.frame(Area = c("Region", "Wales"), 
                    Total = c(as.integer(region_smoker_count),
                              as.integer(wales_smoker_count))
@@ -240,10 +264,25 @@ region_smoking_compare <- function(dbs,gp_area) {
   ) +
     geom_bar(stat="identity")
   p + geom_text(vjust=-1)
+  
+  ###### Second chart looking at %
+  df2 <- data.frame(Area = c(gp_area, "Wales"), 
+                   Total = c(as.numeric(region_smoker_percent),
+                             as.numeric(wales_smoker_percent))
+  )
+  
+  p2 <- ggplot(data=df2, aes(x=Area, 
+                         y=Total, 
+                         color = Area, 
+                         fill = Area, 
+                         label = Total)
+  ) +
+    geom_bar(stat="identity")
+  p2 + geom_text(vjust=-1)
 }
 
 
-####################### Region Drugs Spend ####################
+######################### Region Drugs Spend ###################################
 gp_region_medication <- function(dbs) {
   #all_regions <- select_all_region_details(dbs) ##region_select(dbs, region)
   
@@ -313,6 +352,7 @@ gp_region_medication <- function(dbs) {
   #  }
   #}
   
+  ## TO DO: Add in graph title.
   p<-ggplot(data=drugs_df, aes(x = total_patients, 
                                   y = spend)
   ) +
@@ -393,6 +433,8 @@ region_correlation_check <- function(dbs) {
 
 
 ######################## GP Total spend on Drugs ###############################
+
+##### Needs to be per person! Needs to be adapted!!!!
 gp_spend_medication <- function(dbs) {
   ##get practice details.
   all_gps <- gp_practices(dbs)
@@ -420,12 +462,17 @@ gp_spend_medication <- function(dbs) {
       output_message <- glue("The practice {selected_gp} spent a total of £{meds_cost} on drugs")
       print(output_message)
       
+      cost_per_patient <- meds_cost/number_of_patients
+      
       drugs_df = rbind(drugs_df, data.frame(gp = selected_gp, 
                                             total_patients = as.numeric(number_of_patients),  
-                                            spend = as.numeric(meds_cost)))
+                                            spend = as.numeric(cost_per_patient))) #spend = as.numeric(meds_cost)
     }
   }
   
+  
+  ## TO DO: Add in graph title.
+  # Plot graph here
   p<-ggplot(data=drugs_spend, aes(x = total_patients, 
                                   y = spend)
   ) +
@@ -439,55 +486,33 @@ gp_spend_medication <- function(dbs) {
 
 #################### Calculate GP Spend Corrolation ############################
 spend_correlation_check <- function(dbs) {
-  # get spend of gp -> 'At practice level'
-  #gp_patients <- find_all_patients(dbs,selected_gp)
-  #gp_data <- select_gp(dbs,selected_gp)
-  #meds_cost <- gp_data  %>% select(actcost) %>%  summarise(sum(actcost,na.rm = TRUE))
-  #meds_cost <- round(meds_cost, digits = 2)
-  # correlate spend to cancer
-  all_gp_spend <- find_all_gp_spend(dbs)
-  gp_cancer <- find_all_indi_patients(dbs, 'CAN%')
-  gp_diabet <- find_all_indi_patients(dbs, 'DM%')
-  gp_demenstia <- find_all_indi_patients(dbs,'DEM%')
-  gp_hypten <- find_all_indi_patients(dbs,'HYP%')
   
-  print(nrow(all_gp_spend))
-  print(nrow(gp_cancer))
-  print(nrow(gp_diabet))
-  print(nrow( gp_demenstia))
-  print(nrow( gp_hypten))
+  all_gp_spend <- find_all_gp_actcost(dbs)
   
-  all_gp_count <- all_gp_spend %>% select(actcost) %>%  
-    summarise(sum(actcost,na.rm = TRUE))
-  gp_cancer_count <- gp_cancer %>% select(numerator) %>%  
-    summarise(sum(numerator,na.rm = TRUE))
-  gp_diabet_count <- gp_diabet %>% select(numerator) %>%  
-    summarise(sum(numerator,na.rm = TRUE))
-  gp_demenstia_count <- gp_demenstia %>% select(numerator) %>%  
-    summarise(sum(numerator,na.rm = TRUE))
-  gp_hypten_count <- gp_hypten %>% select(numerator) %>%  
-    summarise(sum(numerator,na.rm = TRUE))
-  #print(gp_cancer)
-  
-  #wales_cancer_details <- find_wales_inicator_patients(dbs, 'CAN')
-  
-  cancer_cor <- cor.test(as.numeric(gp_cancer$numerator),
-                         as.numeric(all_gp_spend$actcost), method=c("pearson", "kendall", "spearman"))
+  gp_cancer <- find_all_indi_patients(dbs, 'CAN001') %>% select(practiceid = orgcode, cancer_numerator = numerator, cancer_denominator = field4, cancer_ratio = ratio, cancer_indicator = indicator)
+  all_gp_spend_cancer <- all_gp_spend %>% left_join(gp_cancer, by = 'practiceid')
+  cancer_cor <- cor.test(as.numeric(all_gp_spend_cancer$cancer_numerator),
+                         as.numeric(all_gp_spend_cancer$total_spend), method=c("pearson", "kendall", "spearman"))
   print(cancer_cor)
-  diabet_cor <- cor.test(as.numeric(gp_diabet$numerator),
-                         as.numeric(all_gp_spend$actcost), method=c("pearson", "kendall", "spearman"))
+
+  gp_diabet <- find_all_indi_patients(dbs, 'DM%') %>% select(practiceid = orgcode, diabetes_numerator = numerator, diabetes_denominator = field4, diabetes_ratio = ratio, diabetes_indicator = indicator)
+  all_gp_spend_diabet <- all_gp_spend %>% left_join(gp_diabet, by = 'practiceid')
+  diabet_cor <- cor.test(as.numeric(all_gp_spend_diabet$diabetes_numerator),
+                         as.numeric(all_gp_spend_diabet$total_spend), method=c("pearson", "kendall", "spearman"))
   print(diabet_cor)
-  demenstia_cor <- cor.test(as.numeric(gp_demenstia$numerator),
-                            as.numeric(all_gp_spend$actcost), method=c("pearson", "kendall", "spearman"))
+  
+  gp_demenstia <- find_all_indi_patients(dbs,'DEM%') %>% select(practiceid = orgcode, demenstia_numerator = numerator, demenstia_denominator = field4, demenstia_ratio = ratio, demenstia_indicator = indicator)
+  all_gp_spend_demenstia <- all_gp_spend %>% left_join(gp_demenstia, by = 'practiceid')
+  demenstia_cor <- cor.test(as.numeric(all_gp_spend_demenstia$demenstia_numerator),
+                            as.numeric(all_gp_spend_demenstia$total_spend), method=c("pearson", "kendall", "spearman"))
   print(demenstia_cor)
-  hypten_cor <- cor.test(as.numeric(gp_hypten$numerator),
-                         as.numeric(all_gp_spend$actcost), method=c("pearson", "kendall", "spearman"))
+  
+  gp_hypten <- find_all_indi_patients(dbs,'HYP%') %>% select(practiceid = orgcode, hypten_numerator = numerator, hypten_denominator = field4, hypten_ratio = ratio, hypten_indicator = indicator)
+  all_gp_spend_hypten <- all_gp_spend %>% left_join(gp_hypten, by = 'practiceid')
+  hypten_cor <- cor.test(as.numeric(all_gp_spend_hypten$hypten_numerator),
+                         as.numeric(all_gp_spend_hypten$total_spend), method=c("pearson", "kendall", "spearman"))
   print(hypten_cor)
-  # correlate spend to diabetes
-  
-  # correlate spend to dementia
-  
-  # correlate spend to hypertension
+
 }
 
 

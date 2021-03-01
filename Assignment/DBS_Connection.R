@@ -227,10 +227,37 @@ find_all_indi_patients <- function(dbs, indi) {
     where indicator like \'@{indi}\''));
 }
 
+
+## dont do a * for the sake of it.
 find_all_gp_spend <- function(dbs) {
   dbGetQuery(dbs, qq('
     select * 
     from gp_data_up_to_2015'));
+}
+
+find_all_gp_actcost <- function(dbs) {
+  dbGetQuery(dbs, qq('
+    select practiceid, sum(actcost) as total_spend
+    from gp_data_up_to_2015
+                     group by practiceid'));
+}
+
+find_all_region_diagnosis <- function(dbs, gp_area) {
+  dbGetQuery(dbs, qq('
+  select sum(qf.numerator)
+from address ad
+left join qof_achievement qf
+on ad.practiceid = qf.orgcode
+where county like \'%@{gp_area}%\'
+                     '));
+}
+
+find_all_wales_patients <- function(dbs) {
+  dbGetQuery(dbs, qq('
+    select sum(numerator) as total_patients
+    from qof_achievement
+    where orgcode = \'WAL\'
+    '));
 }
 
 region_patient_and_drugs_spend <- function(dbs, gp_area, indi) {

@@ -65,7 +65,6 @@ p<-ggplot(data=gp_region_spend, aes(x = total_patients,
                              )
 ) +
   geom_point()
-#p + theme(legend.position = "none")
 print(p) 
 
 nrow(gp_region_spend)
