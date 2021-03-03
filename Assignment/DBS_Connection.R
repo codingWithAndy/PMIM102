@@ -99,7 +99,8 @@ gp_practices <- function(DBS) {
 select_gp <- function(dbs, selected_practiceid) {
   ## Find the top drugs prescribed by the selected GP
   dbGetQuery(dbs, qq('
-    select * from gp_data_up_to_2015
+    select * 
+    from gp_data_up_to_2015
     where practiceid = \'@{selected_practiceid}\''))
   
 }

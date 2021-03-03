@@ -20,7 +20,7 @@ display_gp_prac(data)
 #User needs to enter practice_id.
 #If id is incorrect user will be prompted for another.
 #w98044
-user_practice_id <- select_gp_prac()
+user_practice_id <- select_gp_prac(data)
 gp_location <- gp_region(data,user_practice_id)
 
 ############################## PART 1 ##########################################
@@ -36,7 +36,6 @@ region_cancer_compare(data,user_practice_id,gp_location)
 # Q1 Part 2
 # Individual values printed to the console and a Wales scatter plot displayed in plots.
 drugs_spend <- gp_spend_medication(data)
-#print(drugs_spend)
 
 # Use statistical analysis to show whether the level of spending on medication is associated with the rates of the following diseases at a practice level: 
 # cancer, diabetes, dementia, hypertension. If you find statistically significant relationships, what disease is most strongly associated with spend on medication?
@@ -59,22 +58,22 @@ region_smoking_compare(data,selected_region)
 ### Some drugs spend equvilant
 gp_region_spend <- gp_region_medication(data)
 
-print(gp_region_spend)
-p<-ggplot(data=gp_region_spend, aes(x = total_patients, 
-                             y = spend
-                             )
-) +
-  geom_point()
-print(p) 
-
-nrow(gp_region_spend)
+#print(gp_region_spend)
+#p<-ggplot(data=gp_region_spend, aes(x = total_patients, 
+#                             y = spend
+#                             )
+#) +
+#  geom_point()
+#print(p) 
+#
+#nrow(gp_region_spend)
 #### Some correlation check
 region_correlation_check(data)
 
-region_smoking_cor <- cor.test(gp_region_spend$spend,gp_region_spend$total_patients, method=c("pearson", "kendall", "spearman"))
-print(region_smoking_cor)
-print(region_smoking_cor["estimate"])
-print(region_smoking_cor["statistic"]) 
+#region_smoking_cor <- cor.test(gp_region_spend$spend,gp_region_spend$total_patients, method=c("pearson", "kendall", "spearman"))
+#print(region_smoking_cor)
+#print(region_smoking_cor["estimate"])
+#print(region_smoking_cor["statistic"]) 
 
 region_correlation_check(data)
 

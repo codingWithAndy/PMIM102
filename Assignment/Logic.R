@@ -5,6 +5,7 @@ library(dplyr)
 library(lubridate)
 library(gt)
 library(glue)
+library(plotly)
 
 
 ##################### Display GP Practices IDs #################################
@@ -15,11 +16,12 @@ display_gp_prac <- function(dbs) {
 
 
 ################# GP User Selection Validation check ###########################
-select_gp_prac <- function() { #(dbs)
+select_gp_prac <- function(dbs) { #(dbs)
+  available_gp <- gp_practices(dbs)
   valid_id <- FALSE
   while (valid_id != TRUE) {
     user_practice_id <- toupper(readline('Enter a practice ID (Wxxxxx):'))
-    if (grepl('^W[0-9]{5}$', user_practice_id)){
+    if (grepl('^W[0-9]{5}$', user_practice_id) & user_practice_id %in% available_gp$practiceid){
       valid_id <- TRUE
       cat('The pracrtice id ', user_practice_id, 'is valid.')
     } else {
@@ -47,6 +49,8 @@ gp_region <- function(dbs, gp){
     cols_label(
       county = "Name",
     )
+  
+  print(Region)
   
   return (Region_county)
 } 
@@ -91,6 +95,8 @@ disply_gp_top5_drugs <- function(dbs, gp) {
         bnfname = "Name",
         pescribed = "Total amount pescribed"
       )
+    
+    print(top_5_table)
   },
   error=function(e) {
     print("This practice does not have any records or an error has occured.")
@@ -118,6 +124,8 @@ region_top_5_drugs <- function(dbs, gp_location) {
         bnfname="Name",
         pescribed="Total amount pescribed"
       )
+    
+    print(region_top_5_table)
 }
 
 
@@ -181,6 +189,7 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
   
   # get details from the database
   gp_cancer_details <- find_cancer_patients(dbs, gp)
+  all_gp_patients <- find_all_patients(dbs, gp)
   region_cancer_details <- find_region_cancer_patients(dbs, gp_area)
   all_region_patients <- find_all_region_diagnosis(dbs, gp_area)
   wales_cancer_details <- find_wales_inicator_patients(dbs, 'CAN')
@@ -188,19 +197,29 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
   
   gp_cancer_count <- gp_cancer_details %>% select(numerator) %>%  
     summarise(sum(numerator,na.rm = TRUE))
+  all_gp_count <- all_gp_patients %>% select(numerator) %>%  
+    summarise(sum(numerator,na.rm = TRUE))
+  
   region_cancer_count <- region_cancer_details %>% select(numerator) %>%  
     summarise(sum(numerator,na.rm = TRUE))
+  
   wales_cancer_count <- wales_cancer_details %>% select(numerator) %>%  
     summarise(sum(numerator,na.rm = TRUE))
   
   
+  gp_percentage <- (gp_cancer_count/all_gp_count)*100
+  gp_percentage <- round(gp_percentage,digits = 2)
   region_percent <- (region_cancer_count/all_region_patients)*100
-  print(round(region_percent,digits = 2))
-  wales_percent <- wales_cancer_count/all_wales_patients
+  region_percent <- round(region_percent,digits = 2)
+  wales_percent <- (wales_cancer_count/all_wales_patients)*100
+  wales_percent <- round(wales_percent,digits = 2)
   
   output_message <- glue('Total number of cancer gp patients: {gp_cancer_count}
+         GP cancer patient percentage: {gp_percentage}%
          Total number of area cancer patients: {region_cancer_count}
-         Total number of Wales cancer patients: {wales_cancer_count}')
+         Region cancer patient percentage: {region_percent}%
+         Total number of Wales cancer patients: {wales_cancer_count}
+         Wales cancer patient percentage: {wales_percent}%')
   print(output_message)
   
   
@@ -211,6 +230,12 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
                              as.integer(wales_cancer_count))
                    )
   
+  df2 <- data.frame(Area = c("GP", "Region", "Wales"), 
+                    Total = c(as.numeric(gp_percentage),
+                              as.numeric(region_percent),
+                              as.numeric(wales_percent))
+  )
+  
   p<-ggplot(data=df, aes(x=Area, 
                          y=Total, 
                          color = Area, 
@@ -219,7 +244,17 @@ region_cancer_compare <- function(dbs, gp, gp_area) {
             ) +
     geom_bar(stat="identity")
   
-  p + geom_text(vjust=-1)
+  print(p + geom_text(vjust=-1))
+  
+  p2<-ggplot(data=df2, aes(x=Area, 
+                         y=Total, 
+                         color = Area, 
+                         fill = Area, 
+                         label = Total)
+  ) +
+    geom_bar(stat="identity")
+  
+  print(p2 + geom_text(vjust=-1))
 }
 
 
@@ -263,22 +298,28 @@ region_smoking_compare <- function(dbs,gp_area) {
                          label = Total)
   ) +
     geom_bar(stat="identity")
-  p + geom_text(vjust=-1)
+  print(p) + geom_text(vjust=-1)
   
   ###### Second chart looking at %
   df2 <- data.frame(Area = c(gp_area, "Wales"), 
-                   Total = c(as.numeric(region_smoker_percent),
-                             as.numeric(wales_smoker_percent))
-  )
+                   Percentage = c(as.numeric(region_smoker_percent),
+                             as.numeric(wales_smoker_percent)),
+                   Total = c(as.numeric(region_smoker_count),
+                               as.numeric(wales_smoker_count)))
   
   p2 <- ggplot(data=df2, aes(x=Area, 
-                         y=Total, 
-                         color = Area, 
-                         fill = Area, 
-                         label = Total)
+                         y=Percentage,
+                         fill = Area,
+                         text = paste("Total patients:",Total),
+                         label = paste(Percentage, "%"))
   ) +
-    geom_bar(stat="identity")
-  p2 + geom_text(vjust=-1)
+    geom_bar(stat="identity") +
+    ggtitle("Cancer % comparison between, GP, Region and Wales") +
+    geom_text(vjust=-3)
+  
+  fig <- ggplotly(p2)
+  
+  print(fig)
 }
 
 
