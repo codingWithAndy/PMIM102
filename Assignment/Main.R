@@ -56,25 +56,11 @@ declared_as_smokers(data,selected_region)
 region_smoking_compare(data,selected_region)
 
 ### Some drugs spend equvilant
+## Need to check: 05/03
 gp_region_spend <- gp_region_medication(data)
 
-#print(gp_region_spend)
-#p<-ggplot(data=gp_region_spend, aes(x = total_patients, 
-#                             y = spend
-#                             )
-#) +
-#  geom_point()
-#print(p) 
-#
-#nrow(gp_region_spend)
 #### Some correlation check
-region_correlation_check(data)
-
-#region_smoking_cor <- cor.test(gp_region_spend$spend,gp_region_spend$total_patients, method=c("pearson", "kendall", "spearman"))
-#print(region_smoking_cor)
-#print(region_smoking_cor["estimate"])
-#print(region_smoking_cor["statistic"]) 
-
+## Need to check: 05/03
 region_correlation_check(data)
 
 ####################### Database Disconnect ####################################

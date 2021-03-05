@@ -155,7 +155,7 @@ find_cancer_patients <- function(dbs, selected_practiceid) {
   from qof_achievement qf
   left join address ad
   on qf.orgcode = ad.practiceid
-  where qf.indicator like \'CAN%\' 
+  where qf.indicator like \'CAN001\' 
                      and qf.orgcode = \'@{selected_practiceid}\'
                      '));
 }
@@ -166,7 +166,7 @@ find_smoker_patients <- function(dbs, gp_area) {
   from qof_achievement qf
   left join address ad
   on qf.orgcode = ad.practiceid
-  where qf.indicator like \'SMO%\' 
+  where qf.indicator like \'SMO SCR\' 
                      and ad.county like \'%@{gp_area}%\'
                      '));
 }
@@ -199,7 +199,7 @@ find_region_cancer_patients <- function(dbs, gp_area) {
   left join address ad
   on qf.orgcode = ad.practiceid
   where ad.county like \'%@{gp_area}%\' 
-                     and qf.indicator like \'CAN%\''));
+                     and qf.indicator like \'CAN001%\''));
 }
 
 find_wales_inicator_patients <- function(dbs, ind) {
@@ -258,6 +258,7 @@ find_all_wales_patients <- function(dbs) {
     select sum(numerator) as total_patients
     from qof_achievement
     where orgcode = \'WAL\'
+    and indicator like \'%@{indi}%\'
     '));
 }
 
