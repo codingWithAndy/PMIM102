@@ -5,6 +5,14 @@ library(dbplyr)
 library(ggplot2)
 #Connecting to the PostGres gp_practice_data database.
 connect_to_dbs <- function(port_number){
+  message1 <- cat('\014\n                           Welcome to Andy\'s code - \n
+                      Part 1 looks at individual GPs', 
+  '\n                     Part 2 looks at a region as a whole.\n')
+   message2 <- cat('----------------------------------------------------------------------------',
+      '------\n\n', sep='')
+  
+  #print(message1)
+  #print(message2)
   #Make sure the RPostgreSQL package is available.
   require("RPostgreSQL");
   
@@ -21,6 +29,43 @@ connect_to_dbs <- function(port_number){
 dbs_drv <- function(){
   drv = dbDriver("PostgreSQL");
   return(drv)
+}
+
+#
+#qof_indicator_columns <- dbGetQuery(con,
+#                                    qq('select column_name as name, ordinal_position as position,
+#           data_type as type, character_maximum_length as length,
+#           numeric_precision as precision
+#    from information_schema.columns
+#    where table_schema = \'public\' and
+#          table_name = \'@{table}\';'))
+#cat('The table', table, 'has the following structure:\n', sep=' ')
+#qof_indicator_columns
+#
+#table <- 'gp_data_up_to_2015'
+#gp_data_up_to_2015_columns <- dbGetQuery(con,
+#                                         qq('select column_name as name, ordinal_position as position,
+#           data_type as type, character_maximum_length as length,
+#           numeric_precision as precision
+#    from information_schema.columns
+#    where table_schema = \'public\' and
+#          table_name = \'@{table}\';'))
+#cat('The table', table, 'has the following structure:\n', sep=' ')
+#gp_data_up_to_2015_columns
+#"""
+
+# Or we can do the same thing with a function.
+get_columns <- function(dbs, table) {
+  columns <- dbGetQuery(dbs,
+                        qq('select column_name as name, ordinal_position as position,
+           data_type as type, character_maximum_length as length,
+           numeric_precision as precision
+    from information_schema.columns
+    where table_schema = \'public\' and
+          table_name = \'@{table}\';'))
+  cat('\nThe table', table, 'has the following structure:\n', sep=' ')
+  print(columns)
+  return(columns)
 }
 
 
@@ -241,6 +286,16 @@ find_all_gp_actcost <- function(dbs) {
     select practiceid, sum(actcost) as total_spend
     from gp_data_up_to_2015
                      group by practiceid'));
+}
+
+find_all_region_actcost <- function(dbs, region) {
+  dbGetQuery(dbs, qq('
+    select gp.practiceid, sum(gp.actcost) as total_spend
+    from gp_data_up_to_2015 gp
+    left join address ad
+    on gp.practiceid = ad.practiceid
+    where county like \'%@{region}\'
+                     group by gp.practiceid'));
 }
 
 find_all_region_diagnosis <- function(dbs, gp_area) {

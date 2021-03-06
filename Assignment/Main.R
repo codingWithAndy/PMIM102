@@ -5,11 +5,11 @@ source("Logic.R");
 port_number <- 5433
 data <- connect_to_dbs(port_number);
 
-
 #################### Database General Exploration ###############################
 
 ## Add a way to just view all of the tables i.e select * from etc
-
+qof_indicator_columns <- get_columns(data, 'qof_indicator')
+gp_data_up_to_2015_columns <- get_columns(data, 'gp_data_up_to_2015')
 
 ########################## GP Selection ########################################
 
@@ -24,49 +24,43 @@ user_practice_id <- select_gp_prac(data)
 gp_location <- gp_region(data,user_practice_id)
 
 ############################## PART 1 ##########################################
-# Display top five drugs table displayed in viewer and output in console below.
+# Top 5 drugs perscribed for the selcted GP
 disply_gp_top5_drugs(data,user_practice_id)
 
-# Display practice's patients diagnosed with cancer table in viewer and output in console below.
+# GP patients diagnosed with cancer details.
 diagnoised_with_cancer(data,user_practice_id)
 
-# Outputs regional cancer message to the console below and in Plots.
+# GP, Region and Wales Cancer diagnosis compare with visualisation table.
 region_cancer_compare(data,user_practice_id,gp_location)
 
-# Q1 Part 2
-# Individual values printed to the console and a Wales scatter plot displayed in plots.
-drugs_spend <- gp_spend_medication(data)
+# GP Spend on medication per person with GP region.
+gp_spend_medication(data)
 
-# Use statistical analysis to show whether the level of spending on medication is associated with the rates of the following diseases at a practice level: 
-# cancer, diabetes, dementia, hypertension. If you find statistically significant relationships, what disease is most strongly associated with spend on medication?
+#### GP correlation check against: Cancer, Dimentia, Hypertension, Diabeties.
 spend_correlation_check(data)
 
-
 ############################## PART 2 ##########################################
-## Region select like practice id?
+## Region select.
 selected_region <- region_select(data) ## Come back to this later
 
-#### Top 5 drugs for WAL
+#### Top 5 drugs perscribed for the selcted region.
 region_top_5_drugs(data,selected_region)
 
-#### % of patients that smoke in gp, region, Wales + Vis
+#### % of patients that identify as a smoker in selected region compared to Wales with a visualisation.
 declared_as_smokers(data,selected_region)
 
 ### Region total smoking compared to Wales + Vis
 region_smoking_compare(data,selected_region)
 
-### Some drugs spend equvilant
+### Selected region drugs spend comparison with visulisation.
 ## Need to check: 05/03
 gp_region_spend <- gp_region_medication(data)
 
-#### Some correlation check
-## Need to check: 05/03
-region_correlation_check(data)
+#### Regional correlation check against: Smoking, Dementia, Hypertension, Heart Disease.
+region_correlation_check(data, selected_region)
 
 ####################### Database Disconnect ####################################
 #close the connection and unload the drivers.
 disconnect_dbs()
 
-#Calls all columns from the qof_achievement table.
-qof <- qof_indicator_columns_info(data)
-view(qof)
+############################## EOF #############################################
